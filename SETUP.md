@@ -16,11 +16,19 @@ The system processes video directly on the Raspberry Pi and publishes structured
 ```
 Pi Camera
    ↓
-Raspberry Pi (Capture + Detection + Counting)
+Raspberry Pi
+(Video Capture + Detection + Counting)
    ↓
-MQTT Broker
+Edge Application (Python)
    ↓
-Dashboard (macOS / Windows / Linux)
+MQTT Publish (port 1883)
+   ↓
+Mosquitto Broker
+   ↓
+MQTT over WebSocket (port 9001)
+   ↓
+Web Dashboard
+(macOS / Windows / Linux browser)
 ```
 
 - The **Raspberry Pi performs edge processing**
@@ -50,30 +58,69 @@ sudo apt install -y python3-opencv
 sudo apt install -y mosquitto mosquitto-clients
 ```
 
-### 3️⃣ Create Python virtual environment
+### 3️⃣ Enable MQTT WebSocket for dashboard
+
+Start the MQTT broker:
+
+```bash
+sudo systemctl enable --now mosquitto
+```
+
+Create Mosquitto websocket configuration:
+
+```bash
+sudo nano /etc/mosquitto/conf.d/websockets.conf
+```
+
+Add:
+
+```
+listener 1883 0.0.0.0
+protocol mqtt
+
+listener 9001 0.0.0.0
+protocol websockets
+
+allow_anonymous true
+```
+
+Restart Mosquitto:
+
+```bash
+sudo systemctl restart mosquitto
+```
+
+Verify:
+
+```bash
+sudo ss -ltnp | grep mosquitto
+```
+
+You should see:
+
+```
+0.0.0.0:1883
+0.0.0.0:9001
+```
+
+### 4️⃣ Create Python virtual environment
 
 ```bash
 python3 -m venv venv --system-site-packages
 source venv/bin/activate
 ```
 
-### 4️⃣ Install Python dependencies
+### 5️⃣ Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5️⃣ Create local device config
+### 6️⃣ Create local device config
 
 ```
 cp config/device.example.json config/device.json
 nano config/device.json
-```
-
-### 6️⃣ Start MQTT broker
-
-```
-sudo systemctl enable --now mosquitto
 ```
 
 ### 7️⃣ Run the edge system
@@ -87,6 +134,46 @@ The Raspberry Pi will now:
 - capture frames from the camera
 - run people detection
 - publish telemetry to MQTT
+
+### 8️⃣ Dashboard configuration
+
+Update the MQTT broker address in `dashboard/modules/dashboard/services/mqtt.ts`:
+
+```
+const MQTT_URL = "ws://<raspberry-pi-ip>:9001";
+```
+
+Example:
+
+```
+const MQTT_URL = "ws://192.168.1.187:9001";
+```
+
+### 9️⃣ Run the dashboard
+
+Navigate to the dashboard directory:
+
+```
+cd dashboard
+```
+
+Install dependencies:
+
+```
+npm install
+```
+
+Start the development server:
+
+```
+npm run dev
+```
+
+The dashboard will:
+
+- connect to the MQTT broker via WebSocket
+- subscribe to `people_counting/data`
+- visualize real-time telemetry from the Raspberry Pi
 
 # 🧰 Raspberry Pi Setup
 
