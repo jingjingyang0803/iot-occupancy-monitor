@@ -2,3 +2,4 @@ paho-mqtt
 numpy
 psutil
 Flask
+Flask-CORS

@@ -1,4 +1,5 @@
 from flask import Flask, Response, jsonify
+from flask_cors import CORS
 import threading
 import time
 import cv2
@@ -31,6 +32,7 @@ class VideoState:
 
 def create_video_app(state: VideoState) -> Flask:
     app = Flask(__name__)
+    CORS(app)
 
     @app.get("/video/status")
     def video_status():
