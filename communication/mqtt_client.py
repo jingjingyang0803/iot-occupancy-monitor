@@ -11,4 +11,8 @@ _client.connect(BROKER, PORT, 60)
 _client.loop_start()
 
 def publish(data):
-    _client.publish(TOPIC, json.dumps(data))
+    info = _client.publish(TOPIC, json.dumps(data))
+    if info.rc == mqtt.MQTT_ERR_SUCCESS:
+        print("published:", data)
+    else:
+        print("publish failed, rc=", info.rc, "data=", data)

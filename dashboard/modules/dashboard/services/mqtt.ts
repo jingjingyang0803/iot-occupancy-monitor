@@ -6,7 +6,6 @@ import type { LiveTelemetryMessage } from "../types";
 // Port: 8884
 // SSL: ✔
 // const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
-
 const MQTT_URL = "ws://192.168.1.187:9001";
 const MQTT_TOPIC = "people_counting/data";
 
