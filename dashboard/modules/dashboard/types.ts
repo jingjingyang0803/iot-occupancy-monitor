@@ -43,14 +43,13 @@ export type LiveTelemetryMessage = {
   zone: string;
   people_in: number;
   people_out: number;
-  occupancy: number;
   fps?: number;
   cpu?: number;
   cpu_temp?: number;
   motion_score?: number;
   brightness?: number;
-  crowd_level?: "low" | "medium" | "crowded";
-  capacity?: number;
+  density?: number;
+  density_level?: "low" | "medium" | "high";
 };
 
 /** frontend-friendly live state */
@@ -66,9 +65,8 @@ export type LiveDashboardState = {
   cpuTemp: number | null;
   motionScore: number | null;
   brightness: number | null;
-  crowdLevel: "low" | "medium" | "crowded" | null;
-  capacity: number | null;
-  occupancyMismatch: boolean;
+  density: number | null;
+  densityLevel: "low" | "medium" | "high" | null;
 };
 
 export type Mode = "technical" | "business" | "analytics";

@@ -1,14 +1,32 @@
-# communication/schema.py
-from datetime import datetime, timezone
+from __future__ import annotations
 
-def build_payload(device_id, zone, people_in, people_out, occupancy, fps, cpu):
+from datetime import datetime, timezone
+from typing import Dict, Any
+
+
+def build_payload(
+    device_id: str,
+    zone: str,
+    people_in: int,
+    people_out: int,
+    fps: float,
+    cpu: float,
+) -> Dict[str, Any]:
+    """
+    Build base telemetry payload for MQTT publishing.
+
+    Additional fields (motion_score, brightness, density, etc.)
+    can be appended by the caller before publishing.
+    """
+
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
         "device_id": device_id,
+        "timestamp": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "zone": zone,
+
         "people_in": people_in,
         "people_out": people_out,
-        "occupancy": occupancy,
+
         "fps": fps,
-        "cpu": cpu
+        "cpu": cpu,
     }

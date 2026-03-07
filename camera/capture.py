@@ -25,7 +25,6 @@ from processing.people_counter import CounterConfig, PeopleCounter
 
 DEFAULT_DEVICE_ID = "pi-01"
 DEFAULT_ZONE = "main_entrance"
-DEFAULT_CAPACITY = 10
 
 
 def get_cpu_temperature() -> float:
@@ -59,18 +58,24 @@ def parse_roi(roi_str: Optional[str]) -> Optional[ROI]:
     return ROI(x=x, y=y, w=w, h=h)
 
 
-def compute_crowd_level(occupancy: int, capacity: int) -> str:
+def compute_density(motion_score: float) -> float:
     """
-    Compute crowd level dynamically from occupancy/capacity ratio.
-    """
-    safe_capacity = max(capacity, 1)
-    ratio = occupancy / safe_capacity
+    Compute a lightweight derived density/activity indicator in range 0.0-1.0.
 
-    if ratio < 0.4:
+    This is NOT true physical density (e.g. persons/m²).
+    It is a relative scene activity indicator derived from motion in the ROI.
+    """
+    return round(max(0.0, min(float(motion_score), 1.0)), 4)
+
+def compute_density_level(density: float) -> str:
+    """
+    Convert density score into a simple label.
+    """
+    if density < 0.3:
         return "low"
-    if ratio < 0.8:
+    if density < 0.7:
         return "medium"
-    return "crowded"
+    return "high"
 
 
 def start_capture(config: Optional[dict] = None) -> None:
@@ -101,12 +106,6 @@ def start_capture(config: Optional[dict] = None) -> None:
         "--zone",
         default=(config.get("zone") if config else DEFAULT_ZONE),
         help="Logical zone name (e.g., entrance)",
-    )
-    parser.add_argument(
-        "--capacity",
-        type=int,
-        default=(config.get("capacity", DEFAULT_CAPACITY) if config else DEFAULT_CAPACITY),
-        help="Maximum configured capacity of the monitored space",
     )
 
     parser.add_argument("--roi", default=None, help='Optional ROI "x,y,w,h" in pixels')
@@ -178,7 +177,9 @@ def start_capture(config: Optional[dict] = None) -> None:
             frame = picam2.capture_array()
             frames += 1
 
-            people_in, people_out, occupancy, motion_score, brightness, _annotated = (
+            # occupancy may still be used internally by the algorithm,
+            # but we do not publish it from the edge device.
+            people_in, people_out, _occupancy, motion_score, brightness, _annotated = (
                 counter.update(frame)
             )
 
@@ -189,14 +190,15 @@ def start_capture(config: Optional[dict] = None) -> None:
                 fps = frames / elapsed if elapsed > 0 else 0.0
                 cpu = psutil.cpu_percent(interval=None)
                 cpu_temp = get_cpu_temperature()
-                crowd_level = compute_crowd_level(occupancy, args.capacity)
+
+                density = compute_density(float(motion_score))
+                density_level = compute_density_level(density)
 
                 payload = build_payload(
                     device_id=args.device_id,
                     zone=args.zone,
                     people_in=people_in,
                     people_out=people_out,
-                    occupancy=occupancy,
                     fps=round(fps, 2),
                     cpu=round(cpu, 2),
                 )
@@ -204,8 +206,8 @@ def start_capture(config: Optional[dict] = None) -> None:
                 payload["cpu_temp"] = cpu_temp
                 payload["motion_score"] = round(float(motion_score), 6)
                 payload["brightness"] = round(float(brightness), 4)
-                payload["crowd_level"] = crowd_level
-                payload["capacity"] = args.capacity
+                payload["density"] = density
+                payload["density_level"] = density_level
 
                 print(payload)
                 publish(payload)
