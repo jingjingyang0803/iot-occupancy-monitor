@@ -18,6 +18,11 @@ function formatTime(ts?: string) {
   });
 }
 
+function formatNumber(value: number | null | undefined, digits = 2) {
+  if (value == null) return "--";
+  return value.toFixed(digits);
+}
+
 export default function BusinessDashboard() {
   const [current, setCurrent] = useState<LiveDashboardState | null>(null);
   const [history, setHistory] = useState<LiveDashboardState[]>([]);
@@ -37,20 +42,21 @@ export default function BusinessDashboard() {
     return unsubscribe;
   }, []);
 
-  const capacity = current?.capacity ?? 20;
   const occupancy = current?.occupancy ?? 0;
-  const utilization =
-    capacity > 0 ? Math.round((occupancy / capacity) * 100) : 0;
 
   const status = useMemo(() => {
     if (!current) return "Waiting";
-    if (current.crowdLevel === "crowded") return "Crowded";
-    if (current.crowdLevel === "medium") return "Medium";
-    return "Low";
+    if (current.densityLevel === "high") return "High activity";
+    if (current.densityLevel === "medium") return "Moderate activity";
+    return "Low activity";
   }, [current]);
 
   const statusVariant: "normal" | "busy" | "over" =
-    status === "Low" ? "normal" : status === "Medium" ? "busy" : "over";
+    status === "Low activity"
+      ? "normal"
+      : status === "Moderate activity"
+        ? "busy"
+        : "over";
 
   const peakOccupancy = history.reduce(
     (max, item) => Math.max(max, item.occupancy),
@@ -68,7 +74,7 @@ export default function BusinessDashboard() {
           {formatTime(current?.timestamp)}
         </div>
         <div className="subtle">
-          Capacity-aware business view · MQTT: {connectionStatus}
+          Entrance flow business view · MQTT: {connectionStatus}
         </div>
       </section>
 
@@ -76,23 +82,23 @@ export default function BusinessDashboard() {
         <KpiCard
           title="Current occupancy"
           value={occupancy}
-          subtitle={`Capacity: ${capacity}`}
+          subtitle="Derived from total IN - total OUT"
         />
         <KpiCard
-          title="Utilization"
-          value={`${utilization}%`}
-          subtitle={`${occupancy} / ${capacity}`}
-        />
-        <KpiCard
-          title="Crowd status"
+          title="Activity level"
           value={status}
-          subtitle="Dynamic by capacity"
+          subtitle={`Density level: ${current?.densityLevel ?? "--"}`}
           variant={statusVariant}
         />
         <KpiCard
           title="Peak occupancy"
           value={peakOccupancy}
           subtitle="Recent live window"
+        />
+        <KpiCard
+          title="Density"
+          value={formatNumber(current?.density, 3)}
+          subtitle="Relative activity indicator"
         />
         <KpiCard title="People IN" value={totalIn} />
         <KpiCard title="People OUT" value={totalOut} />
@@ -113,38 +119,30 @@ export default function BusinessDashboard() {
               gap: 12,
             }}
           >
-            {history.slice(-8).map((item, idx) => {
-              const itemCapacity = item.capacity ?? capacity;
-              const itemUtilization =
-                itemCapacity > 0
-                  ? Math.round((item.occupancy / itemCapacity) * 100)
-                  : 0;
-
-              return (
-                <div
-                  key={`${item.timestamp}-${idx}`}
-                  style={{
-                    padding: 12,
-                    borderRadius: 14,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <div className="subtle" style={{ marginBottom: 8 }}>
-                    {formatTime(item.timestamp)}
-                  </div>
-                  <div>
-                    <b>Occ:</b> {item.occupancy}
-                  </div>
-                  <div>
-                    <b>Util:</b> {itemUtilization}%
-                  </div>
-                  <div>
-                    <b>Status:</b> {item.crowdLevel ?? "--"}
-                  </div>
+            {history.slice(-8).map((item, idx) => (
+              <div
+                key={`${item.timestamp}-${idx}`}
+                style={{
+                  padding: 12,
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div className="subtle" style={{ marginBottom: 8 }}>
+                  {formatTime(item.timestamp)}
                 </div>
-              );
-            })}
+                <div>
+                  <b>Occ:</b> {item.occupancy}
+                </div>
+                <div>
+                  <b>Density:</b> {formatNumber(item.density, 3)}
+                </div>
+                <div>
+                  <b>Status:</b> {item.densityLevel ?? "--"}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -153,10 +151,11 @@ export default function BusinessDashboard() {
         <h2 className="h2">Current business interpretation</h2>
         <div className="panel" style={{ padding: 20 }}>
           <p style={{ margin: 0 }}>
-            The monitored entrance currently has <b>{occupancy}</b> people in
-            the space, with a configured capacity of <b>{capacity}</b>. This
-            corresponds to <b>{utilization}% utilization</b> and the current
-            crowd level is <b>{status}</b>.
+            The monitored entrance currently shows an estimated occupancy of{" "}
+            <b>{occupancy}</b>, reconstructed from cumulative entry and exit
+            counts. The present scene activity is <b>{status}</b>, with a
+            relative density value of <b>{formatNumber(current?.density, 3)}</b>
+            .
           </p>
         </div>
       </section>

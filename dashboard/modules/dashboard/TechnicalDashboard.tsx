@@ -33,9 +33,8 @@ function getStatus(
     return "Disconnected";
   }
   if (!current) return "Waiting for data";
-  if (current.occupancyMismatch) return "Warning";
-  if (current.crowdLevel === "crowded") return "Busy";
-  if (current.crowdLevel === "medium") return "Warning";
+  if (current.densityLevel === "high") return "Busy";
+  if (current.densityLevel === "medium") return "Warning";
   return "Normal";
 }
 
@@ -66,10 +65,6 @@ export default function TechnicalDashboard() {
   const statusVariant: "normal" | "busy" | "over" =
     status === "Normal" ? "normal" : status === "Busy" ? "busy" : "over";
 
-  const consistency = current?.occupancyMismatch ? "Mismatch" : "OK";
-  const consistencyVariant: "normal" | "over" =
-    consistency === "OK" ? "normal" : "over";
-
   return (
     <>
       <section className="panel meta">
@@ -94,17 +89,15 @@ export default function TechnicalDashboard() {
           variant={statusVariant}
         />
         <KpiCard
-          title="Crowd level"
-          value={current?.crowdLevel ?? "--"}
-          subtitle={
-            current?.capacity != null ? `Capacity: ${current.capacity}` : ""
-          }
+          title="Density level"
+          value={current?.densityLevel ?? "--"}
+          subtitle="Derived from scene activity"
           variant={
-            current?.crowdLevel === "low"
+            current?.densityLevel === "low"
               ? "normal"
-              : current?.crowdLevel === "medium"
+              : current?.densityLevel === "medium"
                 ? "busy"
-                : current?.crowdLevel === "crowded"
+                : current?.densityLevel === "high"
                   ? "over"
                   : "normal"
           }
@@ -127,17 +120,8 @@ export default function TechnicalDashboard() {
           title="Motion score"
           value={formatNumber(current?.motionScore, 4)}
         />
+        <KpiCard title="Density" value={formatNumber(current?.density, 3)} />
         <KpiCard title="Messages received" value={history.length} />
-        <KpiCard
-          title="Data consistency"
-          value={consistency}
-          subtitle={
-            current?.occupancyMismatch
-              ? "occupancy ≠ people_in - people_out"
-              : "occupancy is consistent"
-          }
-          variant={consistencyVariant}
-        />
       </section>
 
       <section className="section">
@@ -167,7 +151,10 @@ export default function TechnicalDashboard() {
                   <b>Occ:</b> {item.occupancy}
                 </div>
                 <div>
-                  <b>Crowd:</b> {item.crowdLevel ?? "--"}
+                  <b>Density:</b> {formatNumber(item.density, 3)}
+                </div>
+                <div>
+                  <b>Level:</b> {item.densityLevel ?? "--"}
                 </div>
                 <div>
                   <b>FPS:</b> {item.fps ?? "--"}
@@ -210,7 +197,7 @@ export default function TechnicalDashboard() {
             style={{
               display: "grid",
               gridTemplateColumns:
-                "1.6fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1fr 0.9fr",
+                "1.6fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1fr 1.2fr",
               gap: 12,
               padding: "14px 16px",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -224,7 +211,7 @@ export default function TechnicalDashboard() {
             <div>fps</div>
             <div>cpu</div>
             <div>cpu temp</div>
-            <div>crowd</div>
+            <div>density</div>
           </div>
 
           {history.length === 0 ? (
@@ -241,7 +228,7 @@ export default function TechnicalDashboard() {
                   style={{
                     display: "grid",
                     gridTemplateColumns:
-                      "1.6fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1fr 0.9fr",
+                      "1.6fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1fr 1.2fr",
                     gap: 12,
                     padding: "14px 16px",
                     borderBottom:
@@ -261,7 +248,11 @@ export default function TechnicalDashboard() {
                       ? `${formatNumber(item.cpuTemp, 1)} °C`
                       : "--"}
                   </div>
-                  <div>{item.crowdLevel ?? "--"}</div>
+                  <div>
+                    {item.density != null
+                      ? `${formatNumber(item.density, 3)} (${item.densityLevel ?? "--"})`
+                      : "--"}
+                  </div>
                 </div>
               ))
           )}
