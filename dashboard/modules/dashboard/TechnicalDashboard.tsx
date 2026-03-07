@@ -3,6 +3,7 @@ import { subscribeToLiveTelemetry } from "./services/mqtt";
 import { normalizeLiveTelemetry } from "./services/normalize";
 import type { LiveDashboardState, LiveTelemetryMessage } from "./types";
 import KpiCard from "./components/KpiCard";
+import VideoPanel from "./components/VideoPanel";
 
 const MAX_POINTS = 30;
 
@@ -67,6 +68,13 @@ export default function TechnicalDashboard() {
 
   return (
     <>
+      {" "}
+      <section className="section">
+        <h2 className="h2">Live Camera</h2>
+        <div className="panel" style={{ padding: 20 }}>
+          <VideoPanel />
+        </div>
+      </section>
       <section className="panel meta">
         <div>
           <b>Device:</b> {current?.deviceId ?? "--"} · <b>Zone:</b>{" "}
@@ -77,7 +85,6 @@ export default function TechnicalDashboard() {
           MQTT status: {connectionStatus} · Messages received: {history.length}
         </div>
       </section>
-
       <section className="grid">
         <KpiCard title="Current occupancy" value={current?.occupancy ?? 0} />
         <KpiCard title="Total IN" value={current?.peopleIn ?? 0} />
@@ -123,7 +130,6 @@ export default function TechnicalDashboard() {
         <KpiCard title="Density" value={formatNumber(current?.density, 3)} />
         <KpiCard title="Messages received" value={history.length} />
       </section>
-
       <section className="section">
         <h2 className="h2">Recent trend</h2>
         <div className="panel" style={{ padding: 20 }}>
@@ -176,7 +182,6 @@ export default function TechnicalDashboard() {
           </div>
         </div>
       </section>
-
       <section className="section">
         <div
           style={{
