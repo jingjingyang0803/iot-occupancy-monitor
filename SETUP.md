@@ -79,7 +79,7 @@ sudo systemctl enable --now mosquitto
 ### 7️⃣ Run the edge system
 
 ```
-python main.py --mode live
+python main.py
 ```
 
 The Raspberry Pi will now:
@@ -217,7 +217,7 @@ mosquitto_sub -h <YOUR_PI_IP_ADDRESS> -t people_counting/data -v
 Expected output:
 
 ```
-{"timestamp":"2026-03-06T00:25:29Z","device_id":"pi-01","zone":"main_entrance","people_in":34,"people_out":32,"occupancy":4,"fps":29.9,"cpu":52.8}
+{'device_id': 'pi-01', 'timestamp': '2026-03-07T22:09:56+00:00', 'zone': 'main_entrance', 'people_in': 27, 'people_out': 18, 'fps': 30.13, 'cpu': 68.8, 'cpu_temp': 56.97, 'motion_score': 0.0, 'brightness': 0.4941, 'density': 0.0, 'density_level': 'low'}
 ```
 
 # 📊 Dashboard

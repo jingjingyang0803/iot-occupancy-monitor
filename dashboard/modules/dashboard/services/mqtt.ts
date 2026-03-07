@@ -1,12 +1,13 @@
 import mqtt from "mqtt";
 import type { LiveTelemetryMessage } from "../types";
 
-// const MQTT_URL = "ws://localhost:9001";
 // https://www.hivemq.com/demos/websocket-client/
 // Host: broker.hivemq.com
 // Port: 8884
 // SSL: ✔
-const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+// const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+
+const MQTT_URL = "ws://192.168.1.187:9001";
 const MQTT_TOPIC = "people_counting/data";
 
 export function subscribeToLiveTelemetry(
@@ -16,8 +17,15 @@ export function subscribeToLiveTelemetry(
   ) => void,
 ) {
   onStatusChange?.("connecting");
+  console.log("Connecting to:", MQTT_URL);
 
-  const client = mqtt.connect(MQTT_URL);
+  const client = mqtt.connect(MQTT_URL, {
+    protocolVersion: 4,
+    reconnectPeriod: 5000,
+    connectTimeout: 10000,
+    clean: true,
+    clientId: `dashboard_${Math.random().toString(16).slice(2, 10)}`,
+  });
 
   client.on("connect", () => {
     console.log("Connected to MQTT broker");
@@ -27,11 +35,14 @@ export function subscribeToLiveTelemetry(
       if (err) {
         console.error("Subscribe error:", err);
         onStatusChange?.("error");
+      } else {
+        console.log("Subscribed to:", MQTT_TOPIC);
       }
     });
   });
 
-  client.on("message", (_topic, payload) => {
+  client.on("message", (topic, payload) => {
+    console.log("Raw MQTT message:", topic, String(payload));
     try {
       const parsed = JSON.parse(String(payload)) as LiveTelemetryMessage;
       onMessage(parsed);
