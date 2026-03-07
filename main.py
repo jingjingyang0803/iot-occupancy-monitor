@@ -1,8 +1,10 @@
 import argparse
 import json
+import threading
 from pathlib import Path
 
 from camera.capture import start_capture
+from web.video_server import VideoState, run_video_server
 
 
 CONFIG_PATH = Path("config/device.json")
@@ -23,7 +25,16 @@ def run_live(config: dict) -> None:
     print(f"Zone: {config['zone']}")
     print("Launching camera capture pipeline...")
 
-    start_capture(config)
+    video_state = VideoState()
+
+    video_thread = threading.Thread(
+        target=run_video_server,
+        args=(video_state,),
+        daemon=True,
+    )
+    video_thread.start()
+
+    start_capture(config, video_state=video_state)
 
 
 def run_test(config: dict) -> None:

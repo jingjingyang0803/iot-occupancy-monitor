@@ -71,7 +71,7 @@ export default function TechnicalDashboard() {
       {" "}
       <section className="section">
         <h2 className="h2">Live Camera</h2>
-        <div className="panel" style={{ padding: 20 }}>
+        <div className="panel subtle" style={{ padding: 20, marginBottom: 12 }}>
           <VideoPanel />
         </div>
       </section>
