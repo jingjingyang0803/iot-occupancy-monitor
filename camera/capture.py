@@ -67,6 +67,7 @@ def compute_density(motion_score: float) -> float:
     """
     return round(max(0.0, min(float(motion_score), 1.0)), 4)
 
+
 def compute_density_level(density: float) -> str:
     """
     Convert density score into a simple label.
@@ -78,7 +79,10 @@ def compute_density_level(density: float) -> str:
     return "high"
 
 
-def start_capture(config: Optional[dict] = None) -> None:
+def start_capture(
+    config: Optional[dict] = None,
+    video_state=None,
+) -> None:
     """
     Start the camera capture + people counting + MQTT publishing pipeline.
 
@@ -176,6 +180,9 @@ def start_capture(config: Optional[dict] = None) -> None:
         while True:
             frame = picam2.capture_array()
             frames += 1
+
+            if video_state is not None and video_state.get_enabled():
+                video_state.update_frame(frame)
 
             # occupancy may still be used internally by the algorithm,
             # but we do not publish it from the edge device.
