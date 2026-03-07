@@ -24,12 +24,14 @@
 }
 
 html,
-body {
-  height: 100%;
+body,
+#root {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
   background:
     radial-gradient(
       1200px 600px at 10% 0%,
@@ -42,6 +44,7 @@ body {
       transparent 55%
     ),
     var(--bg);
+  background-repeat: no-repeat;
   color: var(--text);
   font-family:
     ui-sans-serif,
