@@ -1,16 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import {
+  VIDEO_URL,
+  VIDEO_START_URL,
+  VIDEO_STOP_URL,
+} from "../dashboard_config";
 
 export default function VideoPanel() {
   const [showVideo, setShowVideo] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  //   const host = window.location.hostname;
-  const host = `192.168.1.187`;
-  const videoUrl = useMemo(() => `http://${host}:5000/video`, [host]);
-
-  const startUrl = useMemo(() => `http://${host}:5000/video/start`, [host]);
-
-  const stopUrl = useMemo(() => `http://${host}:5000/video/stop`, [host]);
+  const videoUrl = VIDEO_URL;
+  const startUrl = VIDEO_START_URL;
+  const stopUrl = VIDEO_STOP_URL;
 
   async function handleStart() {
     try {

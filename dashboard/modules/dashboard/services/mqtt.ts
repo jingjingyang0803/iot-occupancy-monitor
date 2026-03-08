@@ -1,13 +1,6 @@
 import mqtt from "mqtt";
 import type { LiveTelemetryMessage } from "../types";
-
-// https://www.hivemq.com/demos/websocket-client/
-// Host: broker.hivemq.com
-// Port: 8884
-// SSL: ✔
-// const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
-const MQTT_URL = "ws://192.168.1.187:9001";
-const MQTT_TOPIC = "people_counting/data";
+import { MQTT_URL, MQTT_TOPIC } from "../dashboard_config";
 
 export function subscribeToLiveTelemetry(
   onMessage: (msg: LiveTelemetryMessage) => void,

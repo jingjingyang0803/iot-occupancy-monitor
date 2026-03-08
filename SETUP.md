@@ -20,10 +20,10 @@ Raspberry Pi
 (Video Capture + Detection + Counting)
    ↓
 Edge Application (Python)
+   ├─ MQTT Telemetry Publisher (port 1883)
+   └─ Optional Video Preview Server (port 5000)
    ↓
-MQTT Publish (port 1883)
-   ↓
-Mosquitto Broker
+Mosquitto MQTT Broker
    ↓
 MQTT over WebSocket (port 9001)
    ↓
@@ -31,9 +31,31 @@ Web Dashboard
 (macOS / Windows / Linux browser)
 ```
 
-- The **Raspberry Pi performs edge processing**
-- Processed telemetry is **published via MQTT**
-- The **dashboard subscribes and visualizes the data**
+### The Raspberry Pi will:
+
+- capture frames from the camera
+
+- run lightweight people detection and counting
+
+- compute scene activity metrics (motion, brightness, density)
+
+- publish telemetry messages via MQTT
+
+- optionally provide a live camera preview stream for debugging
+
+The video preview is disabled by default and can be enabled from the dashboard when needed.
+
+### The dashboard will:
+
+- connect to the MQTT broker via WebSocket
+
+- subscribe to people_counting/data
+
+- visualize real-time telemetry from the Raspberry Pi
+
+- display system metrics (occupancy, FPS, CPU, temperature)
+
+- optionally show a live camera preview when the user enables it
 
 # ⚡ Quick Start (Recommended)
 
@@ -129,24 +151,18 @@ nano config/device.json
 python main.py
 ```
 
-The Raspberry Pi will now:
-
-- capture frames from the camera
-- run people detection
-- publish telemetry to MQTT
-
 ### 8️⃣ Dashboard configuration
 
-Update the MQTT broker address in `dashboard/modules/dashboard/services/mqtt.ts`:
+Update the MQTT broker address in `dashboard/modules/dashboard/dashboard_config.ts`:
 
 ```
-const MQTT_URL = "ws://<raspberry-pi-ip>:9001";
+export const BACKEND_HOST = "<raspberry-pi-ip>";
 ```
 
 Example:
 
 ```
-const MQTT_URL = "ws://192.168.1.187:9001";
+export const BACKEND_HOST = "192.168.1.187";
 ```
 
 ### 9️⃣ Run the dashboard
@@ -168,12 +184,6 @@ Start the development server:
 ```
 npm run dev
 ```
-
-The dashboard will:
-
-- connect to the MQTT broker via WebSocket
-- subscribe to `people_counting/data`
-- visualize real-time telemetry from the Raspberry Pi
 
 # 🧰 Raspberry Pi Setup
 
