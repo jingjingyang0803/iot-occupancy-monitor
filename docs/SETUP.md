@@ -1,371 +1,228 @@
-# 🚀 Smart People Counting IoT System
+# Smart People Counting IoT — Setup Guide
 
-Raspberry Pi–Based Edge People Counting System
+This guide explains how to run the system.
 
-This project implements a **real-time edge-based people counting system** using:
+The system has two components:
 
-- Raspberry Pi camera
-- On-device computer vision
-- MQTT messaging
-- Live web dashboard
+| Component | Device                    |
+| --------- | ------------------------- |
+| Backend   | Raspberry Pi              |
+| Frontend  | Computer (Laptop/Desktop) |
 
-The system processes video directly on the Raspberry Pi and publishes structured telemetry data via MQTT.
+# 📋 Requirements
 
-# 🎯 System Architecture
+## Hardware
+
+- Raspberry Pi **3B+ or Raspberry Pi 4**
+- Raspberry Pi Camera Module
+- MicroSD card with Raspberry Pi OS
+- WiFi or Ethernet connection
+
+## Software
+
+- Python **3.9+**
+- Node.js **18+**
+- npm
+- Git
+
+# 🌐 Network Requirement
+
+Both the Raspberry Pi and the dashboard computer must be able to access the MQTT broker.
+
+Default configuration uses a **public broker**:
 
 ```
-Pi Camera
-   ↓
-Raspberry Pi
-(Video Capture + Detection + Counting)
-   ↓
-Edge Application (Python)
-   ├─ MQTT Telemetry Publisher (port 1883)
-   └─ Optional Video Preview Server (port 5000)
-   ↓
-Mosquitto MQTT Broker
-   ↓
-MQTT over WebSocket (port 9001)
-   ↓
-Web Dashboard
-(macOS / Windows / Linux browser)
+broker.hivemq.com
 ```
 
-### The Raspberry Pi will:
+Therefore both devices only require **internet access**.
 
-- capture frames from the camera
+# 1 Raspberry Pi Setup (Backend)
 
-- run lightweight people detection and counting
+Run the following steps **on the Raspberry Pi**.
 
-- compute scene activity metrics (motion, brightness, density)
-
-- publish telemetry messages via MQTT
-
-- optionally provide a live camera preview stream for debugging
-
-The video preview is disabled by default and can be enabled from the dashboard when needed.
-
-### The dashboard will:
-
-- connect to the MQTT broker via WebSocket
-
-- subscribe to people_counting/data
-
-- visualize real-time telemetry from the Raspberry Pi
-
-- display system metrics (occupancy, FPS, CPU, temperature)
-
-- optionally show a live camera preview when the user enables it
-
-# ⚡ Quick Start (Recommended)
-
-The repository is designed to be reproducible on any Raspberry Pi equipped with a compatible camera module.
-
-If you already have a Raspberry Pi with a camera attached, you can run the system with the following steps.
-
-### 1️⃣ Clone the repository
+## 1 Clone repository
 
 ```bash
 git clone https://github.com/jingjingyang0803/Smart-People-Counting-Pi-IoT.git
-cd Smart-People-Counting-Pi-IoT
+cd Smart-People-Counting-Pi-IoT/backend
 ```
 
-### 2️⃣ Install system dependencies
+## 2 Install system dependencies
 
-```
+```bash
 sudo apt update
+
 sudo apt install -y python3-pip python3-venv
 sudo apt install -y python3-picamera2
 sudo apt install -y python3-opencv
 sudo apt install -y mosquitto mosquitto-clients
 ```
 
-### 3️⃣ MQTT Broker Configuration
+## 3 Verify camera
 
-The system uses a **public MQTT broker (HiveMQ)** for communication between the Raspberry Pi and the dashboard.
+Recent Raspberry Pi OS versions automatically detect connected cameras.
 
-Broker settings in `communication/mqtt_client.py`:
+List available cameras:
 
-```
-BROKER = "broker.hivemq.com"
-PORT = 1883
-TOPIC = "people_counting/data"
+```bash
+rpicam-hello --list-cameras
 ```
 
-### 4️⃣ Create Python virtual environment
+Test the camera preview:
+
+```bash
+rpicam-hello
+```
+
+If a preview window appears, the camera is working correctly.
+
+## 4 Create Python environment
 
 ```bash
 python3 -m venv venv --system-site-packages
 source venv/bin/activate
 ```
 
-### 5️⃣ Install Python dependencies
+## 5 Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 6️⃣ Create local device config
+## 6 Create device configuration
 
-```
+```bash
 cp config/device.example.json config/device.json
 nano config/device.json
 ```
 
-### 7️⃣ Run the edge system
+## 7 Run backend
 
-```
+```bash
 python main.py
 ```
 
-### 8️⃣ Dashboard configuration
+The Raspberry Pi will now:
 
-Update the MQTT broker address in `dashboard/modules/dashboard/dashboard_config.ts`:
+- capture camera frames
+- perform motion detection and people counting
+- publish telemetry via MQTT
+
+# 2 Dashboard Setup (Frontend)
+
+Run these steps **on your computer**.
+
+## 1 Clone repository
+
+```bash
+git clone https://github.com/jingjingyang0803/Smart-People-Counting-Pi-IoT.git
+cd Smart-People-Counting-Pi-IoT/frontend
+```
+
+## 2 Install dependencies
+
+```bash
+npm install
+```
+
+## 3 Configure Raspberry Pi address
+
+Edit:
 
 ```
-export const BACKEND_HOST = "<raspberry-pi-ip>";
+src/config/dashboard_config.ts
 ```
 
 Example:
 
-```
+```ts
 export const BACKEND_HOST = "192.168.1.187";
 ```
 
-### 9️⃣ Run the dashboard
+This address is used for the **optional video preview server** running on the Raspberry Pi.
 
-Navigate to the dashboard directory:
+## 4 Start dashboard
 
-```
-cd dashboard
-```
-
-Install dependencies:
-
-```
-npm install
-```
-
-Start the development server:
-
-```
+```bash
 npm run dev
 ```
 
-# 🧰 Raspberry Pi Setup
-
-Tested on:
-
-- Raspberry Pi 3 Model B+
-- Raspberry Pi OS
-
-### 1️⃣ Update System
+Open the dashboard:
 
 ```
-sudo apt update
-sudo apt full-upgrade -y
+http://localhost:5173
 ```
 
-### 2️⃣ Install System Dependencies
+The dashboard will connect to the MQTT broker and start receiving telemetry data.
+
+# 3 MQTT Configuration
+
+The backend and dashboard communicate via MQTT.
+
+Default settings:
+
+| Setting        | Value                  |
+| -------------- | ---------------------- |
+| Broker         | `broker.hivemq.com`    |
+| MQTT Port      | `1883`                 |
+| WebSocket Port | `8884`                 |
+| Topic          | `people_counting/data` |
+
+Backend configuration:
 
 ```
-sudo apt install -y python3-pip python3-venv
-sudo apt install -y python3-picamera2
-sudo apt install -y python3-opencv
-sudo apt install -y mosquitto mosquitto-clients
+backend/communication/mqtt_client.py
 ```
 
-Packages used:
+Frontend configuration:
 
-| Package      | Purpose                     |
-| ------------ | --------------------------- |
-| python3-pip  | Python package manager      |
-| python3-venv | virtual environment support |
-| picamera2    | Raspberry Pi camera access  |
-| OpenCV       | computer vision processing  |
-| mosquitto    | MQTT message broker         |
+```
+frontend/src/config/dashboard_config.ts
+```
 
-# 📷 Camera Setup
+Make sure both use the **same MQTT topic**.
 
-Power off the Raspberry Pi before connecting the camera.
+# 4 Verify MQTT
 
-Connect the camera ribbon cable to the CSI port and secure the connector.
+You can verify MQTT messages using:
 
-After booting the Pi, test the camera.
+```bash
+mosquitto_sub -h broker.hivemq.com -t people_counting/data -v
+```
 
-### List cameras
+If the backend is running correctly, telemetry messages will appear.
+
+# 5 Stop System
+
+Stop the backend:
+
+```
+CTRL + C
+```
+
+# 6 Troubleshooting
+
+### Camera not detected
+
+Check camera connection and run:
 
 ```
 rpicam-hello --list-cameras
 ```
 
-### Camera preview
+### MQTT messages not received
+
+Verify broker configuration in:
 
 ```
-rpicam-hello
+backend/communication/mqtt_client.py
 ```
 
-If a preview window appears, the camera is working.
+### Dashboard cannot connect
 
-# 📸 Capture Test Image
-
-```
-rpicam-still -o test.jpg -t 1
-```
-
-Copy the image to your computer:
+Check the Raspberry Pi IP address in:
 
 ```
-scp pi@<YOUR_PI_IP_ADDRESS>:~/test.jpg .
+frontend/src/config/dashboard_config.ts
 ```
-
-Open the image:
-
-```
-open test.jpg
-```
-
-# 📡 Live Video Streaming (Optional)
-
-Receiver (your computer):
-
-```
-ffplay -fflags nobuffer -flags low_delay -framedrop udp://0.0.0.0:1234
-```
-
-Sender (Raspberry Pi):
-
-```
-rpicam-vid -t 0 --width 640 --height 480 --framerate 30 --inline -o udp://<YOUR_COMPUTER_IP_ADDRESS>:1234
-```
-
-# 🔗 MQTT Communication
-
-The MQTT broker runs locally on the Raspberry Pi.
-
-The edge system publishes telemetry to:
-
-```
-people_counting/data
-```
-
-# Allow LAN Clients to Connect
-
-Create a mosquitto config file:
-
-```
-sudo nano /etc/mosquitto/conf.d/listener.conf
-```
-
-Add:
-
-```
-listener 1883 0.0.0.0
-allow_anonymous true
-```
-
-Restart MQTT:
-
-```
-sudo systemctl restart mosquitto
-```
-
-# 🧪 Test MQTT Messages
-
-On another machine:
-
-```
-mosquitto_sub -h <YOUR_PI_IP_ADDRESS> -t people_counting/data -v
-```
-
-Expected output:
-
-```
-{'device_id': 'pi-01', 'timestamp': '2026-03-07T22:09:56+00:00', 'zone': 'main_entrance', 'people_in': 27, 'people_out': 18, 'fps': 30.13, 'cpu': 68.8, 'cpu_temp': 56.97, 'motion_score': 0.0, 'brightness': 0.4941, 'density': 0.0, 'density_level': 'low'}
-```
-
-# 📊 Dashboard
-
-The dashboard subscribes to MQTT and visualizes:
-
-- occupancy
-- people entering/leaving
-- system status
-- device performance
-
-Run the dashboard on your computer.
-
-```
-cd dashboard
-npm install
-npm run dev
-```
-
-# 🤖 Optional: Auto Start on Boot
-
-To run the system automatically when the Raspberry Pi starts.
-
-Copy the service file:
-
-```
-sudo cp deploy/people-counting.service /etc/systemd/system/
-```
-
-Reload services:
-
-```
-sudo systemctl daemon-reload
-```
-
-Enable auto start:
-
-```
-sudo systemctl enable people-counting
-```
-
-Start service:
-
-```
-sudo systemctl start people-counting
-```
-
-Check logs:
-
-```
-journalctl -u people-counting -f
-```
-
-# 📁 Repository Structure
-
-```
-people-counting-system/
-
-├── camera/          # Video acquisition from Raspberry Pi camera
-├── processing/      # Motion detection & people counting
-├── communication/   # MQTT publishing
-├── storage/         # JSON logging utilities
-├── analytics/       # Historical analysis and KPIs
-├── shared/          # Shared data schema
-├── dashboard/       # Web dashboard
-
-├── config/          # Device configuration templates
-├── deploy/          # Deployment scripts (systemd service)
-
-├── main.py          # System entry point
-├── requirements.txt
-```
-
-# 📌 Important Notes
-
-- Camera capture must run on Raspberry Pi.
-- Dashboard can run on macOS, Linux, or Windows.
-- MQTT enables cross-device communication.
-- Python virtual environments are recommended.
-
-# ⭐ Design Goals
-
-- **Edge computing** (processing on Raspberry Pi)
-- **Real-time telemetry**
-- **Modular architecture**
-- **Easy reproducibility**
-- **Low hardware requirements**
