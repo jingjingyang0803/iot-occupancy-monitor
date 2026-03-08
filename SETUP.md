@@ -80,49 +80,16 @@ sudo apt install -y python3-opencv
 sudo apt install -y mosquitto mosquitto-clients
 ```
 
-### 3️⃣ Enable MQTT WebSocket for dashboard
+### 3️⃣ MQTT Broker Configuration
 
-Start the MQTT broker:
+The system uses a **public MQTT broker (HiveMQ)** for communication between the Raspberry Pi and the dashboard.
 
-```bash
-sudo systemctl enable --now mosquitto
-```
-
-Create Mosquitto websocket configuration:
-
-```bash
-sudo nano /etc/mosquitto/conf.d/websockets.conf
-```
-
-Add:
+Broker settings in `communication/mqtt_client.py`:
 
 ```
-listener 1883 0.0.0.0
-protocol mqtt
-
-listener 9001 0.0.0.0
-protocol websockets
-
-allow_anonymous true
-```
-
-Restart Mosquitto:
-
-```bash
-sudo systemctl restart mosquitto
-```
-
-Verify:
-
-```bash
-sudo ss -ltnp | grep mosquitto
-```
-
-You should see:
-
-```
-0.0.0.0:1883
-0.0.0.0:9001
+BROKER = "broker.hivemq.com"
+PORT = 1883
+TOPIC = "people_counting/data"
 ```
 
 ### 4️⃣ Create Python virtual environment

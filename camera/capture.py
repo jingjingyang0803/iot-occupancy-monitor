@@ -150,7 +150,9 @@ def start_capture(
         help="Seconds between MQTT messages",
     )
 
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    if unknown:
+        print("Ignoring extra arguments:", unknown)
 
     roi = parse_roi(args.roi)
 
@@ -182,6 +184,7 @@ def start_capture(
             frames += 1
 
             if video_state is not None and video_state.get_enabled():
+                print("updating video frame")
                 video_state.update_frame(frame)
 
             # occupancy may still be used internally by the algorithm,
