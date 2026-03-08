@@ -1,24 +1,22 @@
 # Smart People Counting IoT System
 
-## 1. Project Overview
+## 1 Project Overview
 
-This repository is designed to be reproducible on any Raspberry Pi equipped with a compatible camera module.
+This repository implements a modular **IoT-based people counting system** using a **Raspberry Pi camera** and lightweight edge video analytics.
 
-This project implements a modular **IoT-based people counting system** using a **Raspberry Pi 3 Model B+** and a **Raspberry Pi Camera Module V2**.
+The system captures live video, performs **on-device processing**, and converts visual information into structured telemetry data. The data is transmitted through **MQTT** and visualized in a real-time web dashboard.
 
-The system captures live video, performs lightweight **edge video analytics**, estimates people flow and occupancy, and converts visual information into structured IoT telemetry data. The processed data is transmitted through **MQTT** and visualized in a real-time web dashboard.
-
-The project demonstrates how a camera can be treated as an **IoT sensing device**, enabling edge computing and real-time monitoring.
+The project demonstrates how a camera can function as an **IoT sensing device**, enabling edge computing and real-time monitoring.
 
 ### Key Objectives
 
 - Edge-based people counting on resource-constrained hardware
 - Modular IoT system architecture
-- Real-time data transmission using MQTT
-- Scalable data pipeline for storage and analytics
+- Real-time telemetry transmission using MQTT
+- Visualization through a web dashboard
 - Performance evaluation on embedded devices
 
-# 2. System Pipeline
+# 2 System Pipeline
 
 The system follows a typical **edge-to-dashboard IoT pipeline**.
 
@@ -29,19 +27,15 @@ Edge Processing (Raspberry Pi)
    ↓
 MQTT Communication
    ↓
-Dashboard (Client Application)
-   ↓
-Storage
-   ↓
-Analytics
+Web Dashboard
 ```
 
-- **Dashboard** consumes real-time MQTT data streams.
-- **Storage and Analytics** operate on historical logs for insights and evaluation.
+- The **Raspberry Pi** performs video capture and analytics.
+- The **dashboard** subscribes to MQTT telemetry streams and visualizes system status.
 
-# 3. Core Application: People Counting
+# 3 Core Application: People Counting
 
-The primary objective of the system is to estimate:
+The system estimates:
 
 - Number of people **entering**
 - Number of people **leaving**
@@ -49,11 +43,11 @@ The primary objective of the system is to estimate:
 - **Motion intensity**
 - **Environmental brightness**
 
-The people counting algorithm runs directly on the **edge device (Raspberry Pi)** to minimize network bandwidth and enable real-time processing.
+All processing runs directly on the **edge device (Raspberry Pi)** to minimize network bandwidth and support real-time operation.
 
-# 4. Detection Method
+# 4 Detection Method
 
-The system uses lightweight computer vision techniques suitable for embedded hardware.
+The system uses lightweight computer vision techniques designed for **embedded hardware**.
 
 ### Motion-Based Counting Pipeline
 
@@ -74,54 +68,46 @@ Update people_in / people_out / occupancy
 ### Detection Components
 
 - **Background subtraction (MOG2)** for motion detection
-- **ROI-based entrance monitoring** to limit detection to relevant areas
+- **ROI-based entrance monitoring**
 - **Motion blob extraction** using contour detection
-- **Centroid tracking** to estimate object movement
-- **Line-crossing logic** to determine entry and exit events
+- **Centroid tracking**
+- **Line-crossing detection** to detect entry and exit events
 
-This approach prioritizes:
+The system prioritizes:
 
 - Real-time performance
 - Low computational cost
-- Stable IoT telemetry generation
+- Stable telemetry generation
 
-The system is designed as an **edge analytics pipeline**, not as a high-accuracy AI benchmark.
+The goal is not maximum detection accuracy but **reliable edge analytics on constrained hardware**.
 
-The goal is not to maximize detection accuracy but to ensure stable performance on resource-constrained edge hardware.
+# 5 System Architecture
 
-# 5. System Architecture
-
-The repository follows a **modular monorepo architecture** to enable parallel development and clear separation of responsibilities.
+The repository follows a **modular architecture** that separates the edge application and the dashboard.
 
 ```
-people-counting-system/
-│
-├── camera/          # Camera interface and frame acquisition
-│
-├── processing/      # Edge analytics: motion detection and people counting
-│
-├── communication/   # MQTT messaging and device communication
-│
-├── storage/         # Local telemetry logging utilities
-│
-├── analytics/       # Historical data analysis and KPI computation
-│
-├── shared/          # Shared data schema and common utilities
-│
-├── dashboard/       # Real-time web dashboard and visualization
-│
-├── config/          # Device configuration templates
-│
-├── deploy/          # Deployment configuration (systemd service)
+Smart-People-Counting-Pi-IoT/
+
+backend/
+  camera/            camera frame acquisition
+  processing/        motion detection and counting
+  communication/     MQTT messaging
+  web/               optional video preview server
+  config/            device configuration
+  main.py            backend entry point
+
+frontend/
+  src/               dashboard source code
+  public/            static assets
 ```
 
-This architecture supports:
+This structure enables:
 
-- independent module development
-- easier testing and debugging
-- scalable system integration
+- clear separation between **edge processing** and **visualization**
+- easier debugging and testing
+- independent frontend/backend development
 
-# 6. Module Responsibilities
+# 6 Module Responsibilities
 
 ## Camera Module
 
@@ -129,15 +115,14 @@ Handles video acquisition from the Raspberry Pi camera.
 
 Responsibilities:
 
-- Capture video frames
-- Configure resolution and frame rate
-- Monitor performance metrics (FPS, CPU usage)
-- Provide recorded videos for offline testing
+- capture video frames
+- configure resolution and frame rate
+- provide frames to the processing pipeline
 
 Output:
 
 ```
-Raw video frames
+video frames
 ```
 
 ## Processing Module
@@ -146,107 +131,66 @@ Performs **edge video analytics** and people counting.
 
 Responsibilities:
 
-- Motion detection using **background subtraction (MOG2)**
-- Motion blob extraction
-- Centroid tracking
-- Line-crossing detection
-- Occupancy estimation
-- Brightness estimation
+- motion detection using background subtraction
+- motion blob extraction
+- centroid tracking
+- line-crossing detection
+- occupancy estimation
+- brightness estimation
 
 Output:
 
 ```
-Structured JSON telemetry
-```
-
-Example logic:
-
-```
-Motion detected in entrance ROI
-↓
-Extract motion blobs
-↓
-Track centroid movement
-↓
-Detect line crossing
-↓
-Update people_in / people_out
-↓
-Compute occupancy
+structured telemetry data
 ```
 
 ## Communication Module
 
-Handles **device-to-system communication**.
+Handles **device-to-system communication** via MQTT.
 
 Responsibilities:
 
-- Publish structured telemetry via **MQTT**
-- Maintain consistent message formatting
-- Enable real-time dashboard updates
+- publish telemetry messages
+- maintain consistent message format
+- enable real-time dashboard updates
 
-Example MQTT topic:
+Example topic:
 
 ```
 people_counting/data
 ```
 
-## Storage Module
+## Web Module
 
-Handles **local persistence of telemetry data**.
-
-Responsibilities:
-
-- Store structured JSON logs
-- Enable offline debugging
-- Support replay and analytics
-
-Log format:
-
-```
-JSON Lines (.jsonl)
-```
-
-## Analytics Module
-
-Performs **historical data analysis** on stored logs.
-
-Example metrics:
-
-- Peak occupancy
-- Hourly entry counts
-- Average processing FPS
-- CPU utilization trends
-
-These metrics provide **long-term system insights beyond real-time monitoring**.
-
-## Dashboard Module
-
-Provides **real-time visualization of system telemetry**.
-
-Displays:
-
-- Current occupancy
-- People entering / leaving
-- Motion score
-- Brightness level
-- System performance metrics
+Provides an optional **video preview server** for debugging and monitoring.
 
 Features:
 
-- Live MQTT data streaming
-- Support for mock data during development
-- Lightweight browser-based interface
+- start / stop video streaming
+- HTTP endpoint for live preview
+- integration with the dashboard
 
-# 7. Unified Data Schema
+## Dashboard (Frontend)
 
-The schema is designed to remain stable so that all modules(camera, processing, dashboard, analytics) can operate independently.
+Provides **real-time visualization of telemetry data**.
 
-All modules use a shared JSON schema defined in:
+Displays:
 
-```
-shared/data_schema_example.json
-```
+- current occupancy
+- people entering / leaving
+- motion score
+- brightness level
+- system performance metrics
+
+Features:
+
+- MQTT subscription
+- real-time updates
+- browser-based interface
+
+# 7 Unified Data Schema
+
+All modules exchange data using a consistent JSON structure.
 
 Example telemetry message:
 
@@ -267,71 +211,71 @@ Example telemetry message:
 
 ### Design Principles
 
-- Core fields always present
-- Optional fields allowed
-- Dashboard tolerant to missing fields
-- Schema updates require team agreement
+- stable core fields
+- optional fields allowed
+- dashboard tolerant to missing values
+- schema changes require compatibility updates
 
-# 8. Performance Evaluation
+# 8 Performance Evaluation
 
-Because the system runs on a **Raspberry Pi 3 Model B+**, performance evaluation focuses on:
+Because the system runs on **Raspberry Pi hardware**, evaluation focuses on:
 
-- Processing **frames per second (FPS)**
+- processing **FPS**
 - **CPU utilization**
-- **Processing latency**
-- System stability under continuous operation
+- processing latency
+- system stability
 
-These measurements ensure the algorithm remains **practical for edge deployment**.
+These metrics ensure the pipeline remains **practical for edge deployment**.
 
-# 9. Optional Extension — YOLO-Based Detection
+# 9 Optional Extension — YOLO-Based Detection
 
-As a stretch goal, the system may integrate lightweight **YOLO-based person detection**.
+As a potential extension, the system can integrate **YOLO-based person detection**.
 
 Possible approach:
 
-- Run YOLO inference at a low frequency (e.g., 1 FPS)
-- Use results to validate or enhance motion-based counting
-- Attach object detection metadata to the telemetry stream
+- run YOLO inference at low frequency
+- validate motion-based detections
+- attach detection metadata to telemetry
 
-This extension improves accuracy while preserving the **core real-time pipeline**.
+This approach improves accuracy while preserving **real-time performance**.
 
-# 10. Hardware & Software Stack
+# 10 Hardware & Software Stack
 
 ### Hardware
 
 - Raspberry Pi 3 Model B+
-- Raspberry Pi Camera Module V2
+- Raspberry Pi Camera Module
 - MicroSD card
 - Power supply
 
 ### Software
 
-- Python 3
+- Python
 - OpenCV
 - NumPy
-- MQTT (Mosquitto broker)
+- MQTT
 - React + Vite dashboard
 
-# 11. Final Deliverables
+# 11 Project Deliverables
 
 The project deliverables include:
 
-- Working **people counting system demonstration**
-- Real-time web dashboard
-- Modular source code repository
-- System architecture documentation
-- Performance evaluation report
+- working **people counting system**
+- real-time dashboard
+- modular source code repository
+- system architecture documentation
+- performance evaluation report
 
-# 12. Reproducibility
+# 12 Reproducibility
 
 The repository is structured to allow straightforward reproduction on Raspberry Pi devices.
 
-To run the system on a new device:
+To run the system:
 
-1. Install system dependencies
-2. Clone the repository
-3. Install Python dependencies
-4. Configure the device configuration file
-5. Run the edge pipeline
+1. install system dependencies
+2. clone the repository
+3. install Python dependencies
+4. configure the device configuration
+5. run the backend pipeline
 
-Detailed instructions are provided in **`SETUP.md`**.
+Detailed setup instructions are provided in **`SETUP.md`**.
