@@ -18,21 +18,21 @@ This allows the system to start automatically when the Raspberry Pi powers on.
 
 1. Copy the service file to the systemd directory:
 
-```bash
-sudo cp people-counting.service /etc/systemd/system/
-```
+   ```bash
+   sudo cp people-counting.service /etc/systemd/system/
+   ```
 
-1. Reload systemd:
+2. Reload systemd:
 
-```bash
-sudo systemctl daemon-reload
-```
+   ```bash
+   sudo systemctl daemon-reload
+   ```
 
-1. Enable the service to start automatically on boot:
+3. Enable the service to start automatically on boot:
 
-```bash
-sudo systemctl enable people-counting
-```
+   ```bash
+   sudo systemctl enable people-counting
+   ```
 
 ---
 
