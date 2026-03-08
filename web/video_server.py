@@ -7,7 +7,7 @@ import cv2
 
 class VideoState:
     def __init__(self):
-        self.enabled = False
+        self.enabled = True
         self.latest_frame = None
         self.lock = threading.Lock()
 
@@ -65,12 +65,7 @@ def create_video_app(state: VideoState) -> Flask:
 
                 print("video stream: got frame", frame.shape, frame.dtype)
 
-                try:
-                    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                except Exception as e:
-                    print("video stream: cvtColor failed:", e)
-                    time.sleep(0.05)
-                    continue
+                frame_bgr = frame
 
                 ok, buffer = cv2.imencode(
                     ".jpg",
