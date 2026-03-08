@@ -99,6 +99,15 @@ backend/
 frontend/
   src/               dashboard source code
   public/            static assets
+
+storage/
+   local telemetry logs
+
+analytics/
+   hourly and daily summaries
+
+deploy/
+   systemd service configuration
 ```
 
 This structure enables:

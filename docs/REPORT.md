@@ -154,6 +154,15 @@ backend/
 
 frontend/
    React + Vite dashboard
+
+storage/
+   local telemetry logs
+
+analytics/
+   hourly and daily summaries
+
+deploy/
+   systemd service configuration
 ```
 
 ### Module Responsibilities
