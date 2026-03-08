@@ -50,7 +50,7 @@ The edge device performs sensing and local processing.
 ### Messaging system
 
 - MQTT messaging protocol
-- Mosquitto MQTT broker
+- Cloud / public MQTT broker (HiveMQ)
 
 ### User interface
 
@@ -67,30 +67,30 @@ Raspberry Pi
 (Video Capture + Detection + Counting)
    ↓
 Edge Application (Python)
-   ├─ MQTT Telemetry Publisher
-   └─ Optional Video Preview Server
-   ↓
-Mosquitto MQTT Broker
-   ↓
-MQTT over WebSocket
+   ├─ MQTT Telemetry Publisher ──→ Public MQTT Broker (HiveMQ) ──→ MQTT over WebSocket
+   └─ Optional Video Preview Server ──→ Local HTTP Video Stream
    ↓
 Web Dashboard
 (Visualization + Occupancy Calculation)
 ```
 
-Component roles:
+A public MQTT broker is used in this prototype to simplify deployment and allow the dashboard and edge device to communicate even when they are not on the same local network.
 
-| Component                 | Role                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------- |
-| Pi Camera Module V2       | Captures image frames from the monitored entrance                                         |
-| Raspberry Pi              | Runs the edge application performing video capture, motion detection, and people counting |
-| Edge Application (Python) | Processes frames, generates telemetry, and publishes MQTT messages                        |
-| Mosquitto MQTT Broker     | Routes telemetry messages between publishers and subscribers                              |
-| Web Dashboard             | Subscribes to MQTT data, calculates occupancy, and visualizes system status               |
+**Component roles**:
+
+| Component                   | Role                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| Pi Camera Module V2         | Captures image frames from the monitored entrance                                         |
+| Raspberry Pi                | Runs the edge application performing video capture, motion detection, and people counting |
+| Edge Application (Python)   | Processes frames, generates telemetry, and publishes MQTT messages                        |
+| Public MQTT Broker (HiveMQ) | Routes telemetry messages between publishers and subscribers                              |
+| Web Dashboard               | Subscribes to MQTT data, calculates occupancy, and visualizes system status               |
 
 This architecture demonstrates a **typical IoT system where edge devices publish sensor data and applications subscribe to it through a messaging broker.**
 
 ## 2.3 Hardware Architecture
+
+The system follows a typical IoT architecture consisting of an edge sensing layer, a communication layer based on MQTT, and an application layer providing visualization.
 
 ```
         +---------------------+
@@ -103,13 +103,15 @@ This architecture demonstrates a **typical IoT system where edge devices publish
         | Edge Processing     |
         | - Motion Detection  |
         | - People Counting   |
+        | - Telemetry Output  |
         +----------+----------+
                    |
-           MQTT Publish
+             MQTT Publish
                    |
                    v
         +---------------------+
-        | Mosquitto Broker    |
+        | Public MQTT Broker  |
+        | (HiveMQ)            |
         +----------+----------+
                    |
         MQTT over WebSocket
@@ -118,6 +120,7 @@ This architecture demonstrates a **typical IoT system where edge devices publish
         +---------------------+
         | Web Dashboard       |
         | Real-time Monitor   |
+        | Visualization       |
         +---------------------+
 ```
 
@@ -344,11 +347,11 @@ The system uses **MQTT** as the IoT messaging protocol.
 
 Roles in the MQTT architecture:
 
-| Component        | Role           |
-| ---------------- | -------------- |
-| Raspberry Pi     | publisher      |
-| Mosquitto broker | message router |
-| dashboard        | subscriber     |
+| Component                   | Role           |
+| --------------------------- | -------------- |
+| Raspberry Pi                | publisher      |
+| Public MQTT broker (HiveMQ) | message router |
+| dashboard                   | subscriber     |
 
 Example topic structure:
 
@@ -362,7 +365,7 @@ This topic design allows multiple devices to be added easily by changing the dev
 
 # 7. IoT Radio Connection
 
-The prototype uses **WiFi (IEEE 802.11)**.
+The prototype uses **WiFi (IEEE 802.11)** to connect the Raspberry Pi to the Internet, enabling communication with the MQTT broker.
 
 Reasons for choosing WiFi:
 
@@ -547,6 +550,8 @@ The prototype lacks several production features:
 - TLS encryption
 - secure device provisioning
 - access control for dashboards
+- In this prototype a public MQTT broker is used without authentication for simplicity.
+  In production deployments secure MQTT communication would require TLS encryption, authentication, and access control.
 
 # 14. Design Decisions and Problems Encountered
 
@@ -573,15 +578,15 @@ Resolution was reduced to **640×480** to maintain real-time performance on the 
 
 ### Issues encountered
 
-During development several challenges were encountered:
+- Network configuration issues were encountered when connecting the Raspberry Pi to different wireless networks. The device worked correctly on the home WiFi network, but it could not be connected successfully through a mobile hotspot during development.
 
--
--
--
--
--
+- The dashboard architecture went through several iterations. The initial implementation used static JSON data for testing, which was later replaced with real-time MQTT telemetry once the communication pipeline was established.
 
-Different frame rates and processing parameters were tested to improve system stability.
+- Configuring MQTT communication for the web dashboard required enabling MQTT over WebSocket, since browsers cannot connect to the standard MQTT TCP port directly.
+
+- The optional video preview server required Cross-Origin Resource Sharing (CORS) configuration so that the dashboard could access the video stream served by the Raspberry Pi.
+
+- To support demonstrations across different networks, the system was migrated from a local MQTT broker to a public MQTT broker (HiveMQ), allowing the edge device and dashboard to communicate even when not on the same local network.
 
 # 15. Features Not Included
 
