@@ -67,11 +67,11 @@ Raspberry Pi
 (Video Capture + Detection + Counting)
    ↓
 Edge Application (Python)
-   ├─ MQTT Telemetry Publisher ──→ Public MQTT Broker (HiveMQ) ──→ MQTT over WebSocket
-   └─ Optional Video Preview Server ──→ Local HTTP Video Stream
+   ├─ MQTT Telemetry Publisher ──→ Public MQTT Broker (HiveMQ)
+   └─ Optional Video Preview Server ──→ HTTP Video Stream
    ↓
 Web Dashboard
-(Visualization + Occupancy Calculation)
+(MQTT over WebSocket + Visualization)
 ```
 
 A public MQTT broker is used in this prototype to simplify deployment and allow the dashboard and edge device to communicate even when they are not on the same local network.
@@ -131,30 +131,29 @@ The system follows a typical IoT architecture consisting of an edge sensing laye
 The software system is organized into several modular components responsible for sensing, processing, communication, storage, and visualization.
 
 ```
-camera/
-   capture.py
-   camera_stream.py
+backend/
+   camera/
+      capture.py
+      camera_stream.py
 
-processing/
-   people_counter.py
-   motion_detection.py
+   processing/
+      people_counter.py
+      motion_detection.py
 
-communication/
-   mqtt_client.py
-   schema.py
+   communication/
+      mqtt_client.py
+      schema.py
 
-storage/
-   jsonl_logger.py
+   web/
+      video_server.py
 
-analytics/
-   hourly_summary.py
-   daily_summary.py
+   config/
+      device.json
 
-web/
-   video_server.py
+   main.py
 
-dashboard/
-   React-based web dashboard
+frontend/
+   React + Vite dashboard
 ```
 
 ### Module Responsibilities
@@ -193,12 +192,12 @@ The system operates as follows:
 
 ## 3.2 Occupancy Calculation
 
-The Raspberry Pi publishes **entry and exit events**, while the dashboard calculates the current occupancy.
+The Raspberry Pi publishes **entry and exit events**, while the dashboard maintains cumulative counts to compute current occupancy..
 
 Occupancy is computed as:
 
 ```
-occupancy = total_people_in − total_people_out
+occupancy(t) = Σ people_in − Σ people_out
 ```
 
 This design separates **event detection from state computation**.
@@ -356,9 +355,7 @@ Roles in the MQTT architecture:
 Example topic structure:
 
 ```
-people_counter/pi-01/data
-people_counter/pi-01/status
-people_counter/pi-01/logs
+people_counting/{device_id}/data
 ```
 
 This topic design allows multiple devices to be added easily by changing the device identifier.
@@ -627,7 +624,7 @@ GitHub:
 
 https://github.com/jingjingyang0803/Smart-People-Counting-Pi-IoT
 
----
+Setup instructions for reproducing the prototype are provided in SETUP.md.
 
 # 18. Personal Learning Reflections
 
