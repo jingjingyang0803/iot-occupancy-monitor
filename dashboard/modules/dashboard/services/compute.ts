@@ -5,7 +5,7 @@ export function getBuckets(data: Payload): Bucket[] {
 }
 
 export function getTotalVisitors(data: Payload): number {
-  // 业务口径：今日到访人数通常取 IN
+  // Business logic: Total visitors today is usually taken as IN
   return data.aggregates.total.in;
 }
 
@@ -23,8 +23,8 @@ export function getPeakBucket(buckets: Bucket[]): Bucket | null {
 }
 
 export function formatHHMM(isoTs: string): string {
-  // 简化：直接截取 ISO 字符串中的 HH:MM
-  // 例如 "2026-02-17T09:12:00+02:00" => "09:12"
+  // Simplify by directly extracting HH:MM from the ISO string
+  // For example "2026-02-17T09:12:00+02:00" => "09:12"
   const tIndex = isoTs.indexOf("T");
   if (tIndex === -1) return isoTs;
   return isoTs.substring(tIndex + 1, tIndex + 6);
