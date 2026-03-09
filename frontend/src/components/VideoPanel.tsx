@@ -63,6 +63,7 @@ export default function VideoPanel() {
               maxWidth: 720,
               borderRadius: 12,
               display: "block",
+              transform: "rotate(90deg)",
             }}
           />
         </div>

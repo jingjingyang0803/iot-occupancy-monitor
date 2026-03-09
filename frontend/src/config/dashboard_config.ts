@@ -3,7 +3,7 @@ export const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
 export const MQTT_TOPIC = "people_counting/data";
 
 // Pi backend (video stream)
-export const BACKEND_HOST = "192.168.1.187";
+export const BACKEND_HOST = "10.26.173.71";
 
 export const VIDEO_PORT = 5000;
 
