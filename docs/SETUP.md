@@ -56,7 +56,6 @@ sudo apt update
 sudo apt install -y python3-pip python3-venv
 sudo apt install -y python3-picamera2
 sudo apt install -y python3-opencv
-sudo apt install -y mosquitto mosquitto-clients
 ```
 
 ## 3 Verify camera
