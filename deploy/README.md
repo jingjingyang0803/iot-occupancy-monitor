@@ -4,7 +4,23 @@ This directory contains deployment configuration files for running the people co
 
 Currently, it includes a **systemd service file** that allows the backend application to start automatically when the Raspberry Pi boots.
 
----
+## Prerequisites
+
+Before installing the service, complete the backend setup:
+
+- clone the repository
+
+- install system dependencies
+
+- verify camera
+
+- configure `device.json`
+
+- create the Python environment
+
+- install Python dependencies
+
+See: `docs/SETUP.md`
 
 ## people-counting.service
 

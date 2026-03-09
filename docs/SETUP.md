@@ -76,31 +76,44 @@ rpicam-hello
 
 If a preview window appears, the camera is working correctly.
 
-## 4 Create Python environment
-
-```bash
-python3 -m venv venv --system-site-packages
-source venv/bin/activate
-```
-
-## 5 Install Python dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-## 6 Create device configuration
+## 4 Create device configuration
 
 ```bash
 cp config/device.example.json config/device.json
 nano config/device.json
 ```
 
-## 7 Run backend
+Edit the configuration (e.g., device_id, zone, MQTT settings).
+
+## 5 Create Python environment
 
 ```bash
+python3 -m venv venv --system-site-packages
+source venv/bin/activate
+```
+
+## 6 Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 7 Run backend
+
+After completing the setup steps above, the backend can be started in two ways.
+
+### Option 1 — Manual Run (testing and development)
+
+```bash
+source venv/bin/activate
 python main.py
 ```
+
+### Option 2 — Deployment (system service)
+
+For production deployment, the backend can run automatically as a systemd service, allowing it to start when the Raspberry Pi boots.
+
+Detailed instructions in: `deploy/README.md`
 
 The Raspberry Pi will now:
 
