@@ -54,16 +54,29 @@ export default function VideoPanel() {
       </div>
 
       {showVideo ? (
-        <div style={{ marginTop: 16 }}>
+        <div
+          style={{
+            marginTop: 16,
+            width: 420,
+            height: 560,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            borderRadius: 12,
+          }}
+        >
           <img
             src={videoUrl}
             alt="Live camera preview"
             style={{
-              width: "100%",
-              maxWidth: 720,
-              borderRadius: 12,
-              display: "block",
+              width: 560,
+              height: 420,
+              objectFit: "contain",
               transform: "rotate(90deg)",
+              transformOrigin: "center",
+              display: "block",
+              borderRadius: 12,
             }}
           />
         </div>
