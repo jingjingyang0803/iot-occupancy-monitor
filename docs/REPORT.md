@@ -485,15 +485,13 @@ The prototype uses several hardware features:
 
 Approximate memory usage during operation:
 
-| Component                   | Estimated RAM |
-| --------------------------- | ------------- |
-| Raspberry Pi OS             | ~300 MB       |
-| Python processing program   | ~100–150 MB   |
-| MQTT libraries and services | ~20–50 MB     |
+| Component | Tool | Measured |
+| --- | --- | --- |
+| Raspberry Pi OS | free -h | ~300 MB |
+| Python processing pipeline | top (RES memory) | ~200 MB |
+| MQTT libraries/services | top | ~20–30 MB |
 
-Total estimated usage:
-
-**450–500 MB**
+Total estimated usage ≈ **500–550 MB**
 
 This is well within the **1 GB memory available on the Raspberry Pi 3**.
 
