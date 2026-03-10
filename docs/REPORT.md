@@ -553,11 +553,14 @@ The prototype lacks several production features:
 ## Security Considerations
 
 - MQTT authentication
-- TLS encryption
-- secure device provisioning
-- access control for dashboards
-- In this prototype a public MQTT broker is used without authentication for simplicity.
-  In production deployments secure MQTT communication would require TLS encryption, authentication, and access control.
+- TLS encryption (already used for secure MQTT communication)
+- Secure device provisioning
+- Access control for dashboards
+
+In this prototype a **public MQTT broker** is used without authentication for simplicity.
+
+In a production deployment, the system would require **TLS encryption together with authentication and access control.**
+
 
 # 14. Design Decisions and Problems Encountered
 
