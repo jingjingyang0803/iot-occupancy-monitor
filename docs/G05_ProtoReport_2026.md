@@ -649,7 +649,7 @@ During the course of the development of the prototype, the main focus was on the
 - **Designing and implementing the Processing module**, where motion detection and people counting are performed using **Python and OpenCV** libraries.
 - **Designing the edge processing pipeline** that transforms video frames into telemetry data like `people_in`, `people_out`, `motion_score`, and `brightness`.
 - **Assistance in configuring the Raspberry Pi and camera system**, where any issues faced in connecting the Raspberry Pi and camera were resolved.
-- **Assistance in report writing**, specifically in explaining the system architecture and the processing components.
+- Lastly **contributed in the final report writing**
 
 ### Lessons Learned
 
