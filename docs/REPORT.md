@@ -493,7 +493,7 @@ Approximate memory usage during operation:
 
 Total estimated usage ≈ **500–550 MB**
 
-This is well within the **1 GB memory available on the Raspberry Pi 3**.
+This is well within the **1 GB memory available on the Raspberry Pi 4**.
 
 # 12. Value of the Prototype
 
@@ -551,7 +551,7 @@ The prototype lacks several production features:
 ## Security Considerations
 
 - MQTT authentication
-- TLS encryption (already used for secure MQTT communication)
+- TLS encryption via secure WebSockets(already used for secure MQTT communication)
 - Secure device provisioning
 - Access control for dashboards
 
@@ -613,7 +613,9 @@ Demo time: 8:15-10:00
 
 Location: TB219
 
-During the demonstration the following features will be shown:
+Note: The system was originally developed and tested on a Raspberry Pi 3B, where the full pipeline ran successfully. Unfortunately, the device stopped working shortly before the demonstration. Therefore, the final demo was conducted on a Raspberry Pi 4B, running the same system without modification.
+
+During the demonstration the following features were shown:
 
 1. camera sensing and counting
 2. MQTT telemetry messages
