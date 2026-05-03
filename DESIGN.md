@@ -10,16 +10,17 @@
 - **GPS** — Global Positioning System
 - **HTTP** — Hypertext Transfer Protocol
 - **IoT** — Internet of Things
-- **LoRa** — Long Range (LoRa modulation, used in LoRaWAN networks)
-- **LTE-M** — LTE for Machines (also known as eMTC)
+- **LoRa** — Long Range
+- **LTE-M** — LTE for Machines
+- **LwM2M** — Lightweight Machine-to-Machine
 - **MQTT** — Message Queuing Telemetry Transport
 - **NB-IoT** — Narrowband Internet of Things
 - **RFID** — Radio-Frequency Identification
 - **SIM/eSIM** — Subscriber Identity Module / embedded SIM
 - **UWB** — Ultra-Wideband
-- **WiFi** — Wireless Fidelity (IEEE 802.11)
+- **Wi-Fi** — IEEE 802.11 wireless networking
 
-## 1. Introduction
+## 1. Selected topic
 
 The Internet of Things (IoT) connects distributed devices that collect, process, and share data over networks. As IoT systems scale up, concerns such as reliability, energy use, security, and long-term operations become as important as the device hardware itself.
 
@@ -27,482 +28,527 @@ This report describes an IoT-based parcel tracking system intended for high-valu
 
 The design is presented through explicit trade-offs and the requirements that motivate them.
 
-## 2. System Requirements
+### 1.1 Requirements
 
 The system is designed to track valuable parcels during transportation across potentially large geographic areas.
 
-Compared to standard logistics systems, stricter requirements apply due to the high value of the goods and the need to minimize uncertainty and risk.
-
 The key requirements are:
 
-- Near real-time (periodic) location tracking
+- Near real-time periodic location tracking
 - High reliability and system availability
 - Secure communication and data integrity
 - Wide-area coverage across different regions
 - Scalability to support large numbers of shipments
 - Reasonable operational and maintenance cost
 
-In addition, the system must operate under practical constraints:
+Priority and target indicators:
 
-- Limited device power (battery-operated devices)
+- **Must-have:** periodic location visibility, security event alerting, integrity-protected telemetry, and store-and-forward during outages
+- **Should-have:** multi-source positioning fallback, confidence flags, and scalable ingestion for burst uploads after reconnection
+- **Nice-to-have:** facility-level add-ons such as BLE/UWB, route-based adaptive reporting, and advanced anomaly detection
+
+The system must also operate under practical constraints:
+
+- Limited device power
 - Variable network conditions
-- Long device lifetimes with minimal human intervention
+- Long device lifetime with minimal human intervention
 
-These requirements serve as the basis for evaluating all design choices in the following sections.
+#### 1.1.1 Evaluation parameters for trade-off analysis
 
-### 2.1 Evaluation parameters for trade-off analysis
+To compare design options consistently, the following operating assumptions are used:
 
-To compare design options consistently, the following operating assumptions are used throughout the trade-off analysis.
+- **Update frequency:** periodic updates, typically 5–30 minutes depending on risk, route, and battery constraints
+- **Latency expectation:** minutes-level availability when coverage exists; delayed delivery is acceptable during coverage loss
+- **Positioning expectation:** GNSS is primary outdoors; indoor and urban performance is handled with fallbacks
+- **Outage handling:** devices buffer data locally and upload later
+- **Security events:** tamper/impact events are higher priority than routine telemetry
 
-- **Update frequency (near real-time interpretation):** periodic updates, typically in the range of minutes to tens of minutes (e.g., 5–30 min) depending on risk, route, and battery constraints
-- **Latency expectation:** minutes-level availability when coverage exists; delayed delivery is acceptable during coverage loss (store-and-forward)
-- **Positioning expectation:** GNSS provides typical outdoor accuracy; performance degrades indoors/urban canyons (handled via fallbacks and facility events)
-- **Outage handling assumption:** data should not be lost during typical outages; devices buffer locally and upload later
-- **Security event assumption:** tamper/impact events are higher priority than routine telemetry and should be delivered as soon as connectivity is available
+### 1.2 Existing similar applications or services
 
-## 3. Tracking Method
+The planned system is an IoT-enabled high-value parcel tracking service that combines periodic location telemetry, condition monitoring, and security events with an auditable shipment timeline.
 
-This system is designed **only for high-value shipments**, where the main objective is to reduce uncertainty through near real-time visibility. Several tracking approaches exist in logistics; here they are evaluated specifically against the needs of valuable goods.
+| System / Product | Primary tracking method | Near real-time location | Sensor telemetry | Tamper/security event | Offline buffering | Planned system advantage |
+| --- | --- | --- | --- | --- | --- | --- |
+| Carrier tracking portals | Barcode scans at hubs | No | No | No | N/A | Adds visibility between checkpoints |
+| Generic consumer trackers | BLE + phone network | Sometimes | Limited | Weak | Weak | Better enterprise reliability and controlled identity |
+| Cellular asset trackers | GNSS + LTE-M/NB-IoT | Yes | Often yes | Sometimes | Often yes | Adds high-value shipment focus and stronger auditability |
+| High-security logistics services | Mixed methods | Sometimes | Sometimes | Yes | Varies | More scalable and modular open-protocol design |
 
-### 3.1 Baseline checkpoint evidence using barcode and RFID
+IoT adds value because checkpoint scans cannot explain what happens between hubs. For high-value shipments, this uncertainty is costly. IoT telemetry provides periodic location visibility, condition evidence, and security events, enabling proactive response instead of only post-incident investigation.
 
-Checkpoint scans provide chain-of-custody evidence (pickup, hub arrival, delivery). They are operationally mature and remain useful for high-value shipments, but they do not provide continuous visibility between checkpoints.
+### 1.3 Application details
 
-### 3.2 Primary in-transit tracking using GNSS and cellular IoT
+This system provides different application views:
 
-An active tracking device provides near real-time visibility by sending periodic location and sensor telemetry. For low-power wide-area connectivity, “real-time” is typically implemented as **periodic (near real-time) updates** rather than continuous streaming.
+- **Operations dashboard:** map, shipment timeline, ETA/delay investigation, alert inbox, and incident evidence view
+- **Security/risk console:** high-severity event triage, route deviation review, audit evidence export
+- **Customer portal:** shipment status, latest known location, milestones, and optional notifications
+- **Admin tools:** device provisioning, credential rotation, firmware updates, and integration configuration
 
-### 3.3 Optional facility enhancement using BLE and UWB
+### 1.4 Potential threats and ethical issues
 
-In controlled facilities (warehouses, sorting centers, handoff points), BLE can provide zone-level events and UWB can provide higher-precision indoor positioning when required. These are add-ons, not replacements for wide-area connectivity.
+Key risks and mitigations:
 
-### 3.4 Comparison of high-value shipment options
+- **Location privacy:** shipment routes may reveal business-sensitive patterns. Mitigation: role-based access control and reduced-fidelity customer views.
+- **Insider misuse:** mitigation through audit logs, approval workflows, and separation of duties.
+- **Data sharing risks:** mitigation through scoped APIs, contractual limits, and data minimization.
+- **False alarms:** mitigation through calibrated thresholds, confidence flags, and human review.
+- **Evidence disputes:** mitigation through device identity, authenticated messages, sequence numbers, and clear chain-of-custody procedures.
 
-Because high-value logistics varies by route and risk, the solution is often **composed**: a primary wide-area method plus optional add-ons. Table 1 summarizes the main choices.
+## 2. Usage, users and use cases
 
-| Layer / choice | Pros | Cons | Typical use in a commercial high-value product |
+### 2.1 Users and data stakeholders
+
+The system supports several user groups:
+
+- **Logistics operations team:** monitors shipments, investigates delays, receives alerts, and triggers escalation
+- **Security/risk team:** focuses on tamper events, route deviations, prolonged silence, and claim evidence
+- **Customer service/account team:** provides updates and reports to customers
+- **Customers:** view limited shipment status and optional notifications
+- **System administrators:** manage devices, credentials, firmware, integrations, and access logs
+- **External stakeholders:** carriers, insurance partners, auditors, and device vendors
+
+Location and security telemetry is sensitive. Access should follow a need-to-know principle. Customers usually receive a reduced view, while internal teams receive full-fidelity telemetry for incident response.
+
+### 2.2 User amounts
+
+Example scale assumptions:
+
+- **Active devices:** 10,000–100,000
+- **Total registered devices:** 50,000–500,000
+- **Internal users:** 50–1,000
+- **Customer users:** 1,000–100,000
+
+Assume 50,000 active devices and a 15-minute reporting interval:
+
+- Updates per device per day: 96
+- Total telemetry per day: 4.8 million messages
+- Critical events are rarer but need higher priority delivery
+
+This justifies a backend that supports burst handling, elastic ingestion, and cost-aware storage.
+
+### 2.3 State machine diagram (device and shipment lifecycle)
+
+```mermaid
+stateDiagram-v2
+	[*] --> Provisioned: Device manufactured / keys injected
+	Provisioned --> Assigned: Bound to shipment_id
+	Assigned --> Active: Shipment picked up
+
+	Active --> Reporting: Periodic telemetry
+	Reporting --> Active
+
+	Active --> OfflineBuffering: Coverage lost
+	OfflineBuffering --> Active: Coverage restored
+	OfflineBuffering --> UploadBurst: Reconnect + upload buffered data
+	UploadBurst --> Active
+
+	Active --> SecurityEvent: Tamper / open detected
+	SecurityEvent --> Escalation: Notify ops/security + raise priority reporting
+	Escalation --> Active
+
+	Active --> Delivered: Delivery confirmed
+	Delivered --> Returned: Device recovered / returned
+	Returned --> Provisioned: Refurbish + reset for reuse
+```
+
+## 3. Decisions and justifications
+
+### 3.1 Interfacing with the physical world
+
+The system observes:
+
+- **Location:** GNSS as primary source; Cell-ID/Wi-Fi fallback when GNSS is degraded
+- **Condition:** temperature and motion/impact
+- **Security:** tamper/open indicator
+
+GNSS provides the best outdoor accuracy but performs poorly indoors or in urban canyons and consumes energy. Fallback positioning is less accurate, so the backend stores source, accuracy, and confidence for each location point.
+
+#### 3.1.1 Sensor selection and data reliability
+
+The core sensors are:
+
+- **GNSS:** primary outdoor positioning
+- **Temperature sensor:** condition monitoring for sensitive goods
+- **Accelerometer:** motion and impact detection
+- **Tamper/open sensor:** seal, light, or switch-based security evidence
+
+Sensor data is not always absolute. GNSS can be noisy, temperature readings may lag behind real environmental changes, and impact sensors can produce false alarms during normal handling. To improve reliability, the system combines multiple signals and uses plausibility checks.
+
+#### 3.1.2 Data uncertainty and confidence flags
+
+Each location point should include:
+
+- `source`
+- `accuracy_m`
+- `confidence`
+
+This helps users understand not only where the parcel is, but how reliable that location estimate is. During offline periods, the device keeps timestamps and sequence numbers so the backend can rebuild the shipment timeline after reconnection.
+
+### 3.2 Expectations on devices
+
+The tracking device must support:
+
+- **Low power operation:** sleep cycles and adaptive reporting
+- **Local storage:** buffering during coverage outages
+- **Basic local logic:** event detection for tamper, impact, and temperature thresholds
+- **Connectivity:** NB-IoT/LTE-M as primary; BLE/UWB in facilities; satellite only where route risk justifies it
+- **Lifecycle management:** secure provisioning, remote configuration, and firmware update capability
+
+MQTT is used for telemetry and event messages. LwM2M can be used for provisioning, diagnostics, configuration, and firmware management.
+
+### 3.3 Data delivery approaches
+
+Three delivery approaches are considered:
+
+- **Periodic reporting:** predictable power and cost; suitable for near real-time tracking
+- **Event-driven reporting:** useful for tamper, impact, or temperature alarms
+- **Continuous streaming:** high visibility but unsuitable for battery-powered parcel trackers
+
+The selected approach is **hybrid periodic + event-driven**. Routine telemetry is periodic, while critical security and condition events are sent immediately with higher priority. Store-and-forward prevents data loss during outages.
+
+### 3.4 Communication patterns and radio technology on end devices
+
+#### 3.4.1 Communication pattern comparison
+
+| Pattern | Pros | Cons | Fit decision |
 | --- | --- | --- | --- |
-| Baseline evidence: Barcode/RFID checkpoints | Low cost; operationally mature; clear handoff evidence | No visibility between checkpoints; depends on scan discipline | Keep as baseline for chain-of-custody, regardless of tracking technology |
-| Primary tracking: GNSS + cellular IoT (NB-IoT / LTE-M) | Near real-time visibility; supports sensor monitoring and alerts; scalable via existing networks | Battery vs reporting trade-off; GNSS weak indoors; subscription + device management needed | Main in-transit layer for most high-value shipments |
-| Add-ons (selected by route/risk): satellite / BLE or UWB / tamper | Fills coverage gaps; adds facility visibility; strengthens security evidence | Extra cost, ops complexity, and sometimes power impact | Enable only when justified (coverage gaps, indoor precision, theft risk) |
+| Device-to-Cloud | Works with cellular coverage; direct device identity; scalable ingestion | Subscription cost; coverage gaps | Selected as default |
+| Device-to-Gateway | Efficient indoors; good facility visibility | Requires gateways; limited coverage | Optional facility add-on |
+| Device-to-Device | Can extend local coverage | Complex and unpredictable | Not selected |
+| Backend data sharing | Useful for carriers/customers/insurance | Governance and privacy complexity | Supported as integration layer |
 
-Add-on examples (used together with the primary layer when needed):
+Device-to-Cloud is selected because parcels move across wide areas and cannot depend on local infrastructure. BLE/UWB gateways are useful only in controlled facilities.
 
-- **Positioning fallback:** Cell-ID / Wi-Fi when GNSS is degraded
-- **Coverage fallback:** satellite on routes with long cellular gaps
-- **Facility layer:** BLE zone events (low cost) or UWB (high precision)
-- **Security:** tamper/open sensing or e-seal
+#### 3.4.2 Radio technology comparison
 
-### 3.5 Composition rules for selecting the right combination
-
-Routes and risk profiles differ, so add-ons are enabled using clear selection rules:
-
-#### 3.5.1 Coverage-driven add-ons
-
-- **Cellular coverage gaps:** if a route regularly has multi-hour cellular outages (e.g., sea freight), add **satellite fallback** for critical updates.
-
-#### 3.5.2 Facility-driven add-ons
-
-- **Indoor precision requirement:** if a facility requires precise indoor location (not just “arrived”), add **UWB**; otherwise **BLE zone events** are sufficient.
-
-#### 3.5.3 Security-driven add-ons
-
-- **Theft/tamper risk:** if shipments are theft-sensitive, enable **tamper/open sensing** and define an escalation workflow.
-
-#### 3.5.4 Power-driven configuration
-
-- **Battery vs visibility:** use **adaptive reporting** (faster on movement/anomalies, slower when stationary) to protect battery life while keeping security responsiveness.
-
-This is a deliberate trade-off: better visibility and faster operational response, in exchange for higher device cost and added system complexity. Silicon Labs (2023) notes that periodic monitoring can shift logistics operations from reactive handling to proactive intervention, which is especially relevant for high-value shipments.
-
-## 4. Connectivity and Communication Design
-
-This section evaluates communication technologies against the needs of wide-area coverage, reliability, and scalability. In high-value deployments, connectivity is typically layered: cellular IoT as the primary channel, with optional fallbacks (such as satellite) when the route demands it.
-
-### 4.1 Technology screening and exclusions
-
-WiFi and classic Bluetooth are not suitable as primary channels because they are short-range and depend on local infrastructure. They do not meet the wide-area requirement for in-transit tracking.
-
-BLE remains useful in controlled environments such as warehouses, hubs, and handoff points, where receivers can be installed and maintained.
-
-LoRa provides long-range communication with low power consumption, making it attractive for IoT applications. However, its deployment depends on specific infrastructure, which may not be available across all regions. This limits its scalability for global logistics systems.
-
-Cellular IoT technologies such as NB-IoT and LTE-M, standardized by 3GPP, provide wide-area coverage using existing telecom infrastructure. This makes them more suitable for commercial deployment.
-
-An important consideration from the course is that radio communication is significantly more energy-intensive than local processing. Therefore, communication must be minimized and carefully managed.
-
-### 4.2 Selected connectivity with justification
-
-NB-IoT is selected as the preferred option because it balances coverage, energy efficiency, and infrastructure availability. It adds recurring subscription cost, but it simplifies deployment and supports reliable wide-area operation. Near real-time tracking is implemented with adaptive reporting intervals rather than continuous transmission to keep power use manageable.
-
-LTE-M is a practical alternative when mobility support and latency requirements are stricter, typically with higher energy use. NB-IoT typically provides deeper coverage and lower power consumption but supports lower data rates and higher latency. LTE-M, in contrast, supports better mobility (handover between cells) and lower latency, making it more suitable for highly mobile scenarios.
-
-In practice, teams choose between NB-IoT and LTE-M based on route coverage, mobility behavior, power budget, and the operator’s network support.
-
-BLE is a strong fit for short-range tracking because it is low cost and can run for long periods on small batteries. NB-IoT and LTE-M cover wide areas more efficiently than traditional cellular, but they are still better suited to periodic uplinks than continuous streaming. This is why update frequency must be treated as a power and cost decision, not only a product requirement.
-
-### 4.3 Technology comparison summary
-
-The key communication technologies can be compared based on their characteristics:
-
-| Technology | Coverage | Power Consumption | Real-time Capability | Infrastructure Requirement | Typical Use Case |
+| Requirement | System needs | BLE | LoRaWAN | NB-IoT | LTE-M |
 | --- | --- | --- | --- | --- | --- |
-| BLE | Short-range | Very low | High (local) | High (requires receivers) | Indoor tracking, warehouses |
-| LoRa | Long-range | Very low | Low (periodic) | Medium (requires gateways) | Regional deployments |
-| NB-IoT | Wide-area | Low | Medium (periodic updates) | Low (cellular network) | Global asset tracking |
-| 4G/LTE | Wide-area | High | High | Low (cellular network) | High-power devices |
+| Cost | 3 | 5 | 4 | 3 | 3 |
+| Throughput | 2 | 3 | 1 | 2 | 3 |
+| Energy efficiency | 5 | 5 | 5 | 4 | 3 |
+| Infrastructure availability | 5 | 2 | 2 | 4 | 4 |
+| Range | 5 | 1 | 4 | 4 | 4 |
 
-For routes with limited cellular coverage (e.g., sea freight or remote areas), satellite IoT can be used as a fallback channel for critical updates, although it introduces higher cost and power constraints.
+NB-IoT and LTE-M best match the need for wide-area tracking. BLE is suitable for warehouses and hubs, while LoRaWAN depends on regional gateway availability.
 
-## 5. Power Management
+#### 3.4.3 NB-IoT vs LTE-M
 
-Power management is central to this design because device lifetime and operational cost depend heavily on energy use.
+- **NB-IoT:** good deep coverage and energy efficiency; suitable for small periodic payloads
+- **LTE-M:** better mobility and lower latency; useful for higher-speed movement or stricter responsiveness
+- **Selection rule:** NB-IoT is the default, while LTE-M is used when mobility or latency is more important than maximum battery lifetime
 
-### 5.1 Core trade-off between update frequency and battery lifetime
+#### 3.4.4 Power and update-frequency trade-off
 
-Since the tracking devices are attached to moving parcels, they must rely on battery power. This introduces a fundamental trade-off between data transmission frequency and battery lifetime.
+More frequent updates improve visibility but increase GNSS fixes and radio transmissions, reducing battery life. Less frequent updates save power but reduce responsiveness.
 
-Frequent updates improve real-time tracking accuracy but significantly increase energy consumption. Conversely, infrequent updates conserve energy but reduce system responsiveness.
+The selected strategy is adaptive reporting:
 
-### 5.2 Power strategy using sleep cycles and scheduled sensing
+- Faster reporting during movement, route deviation, or anomaly
+- Slower reporting when stationary or low-risk
+- Store-and-forward when connectivity is unavailable
 
-To balance these factors, the system uses periodic transmission with low-power modes. Devices remain asleep for most of the time and wake mainly to sample location/sensors and transmit data.
+### 3.5 Message delivery patterns and suitable protocols
 
-In addition, GPS positioning itself can be energy-intensive (especially for frequent fixes), so location sampling should be scheduled (e.g., motion-triggered or interval-based) alongside communication scheduling.
+| Protocol | Communication model | Overhead | Advantages | Limitations |
+| --- | --- | --- | --- | --- |
+| HTTP | Request-response | High | Simple and widely supported | Inefficient for frequent constrained telemetry |
+| MQTT | Publish-subscribe | Low | Lightweight, scalable, supports QoS | Requires broker |
+| CoAP | Request-response over UDP | Low | Lightweight and IoT-oriented | Less mature ecosystem for large-scale operations |
 
-From a commercial perspective, optimizing battery life is essential to reduce maintenance costs and ensure reliable operation throughout the shipment lifecycle.
+MQTT is selected for telemetry and event delivery because it is lightweight, asynchronous, and well suited for many devices publishing small messages.
 
-If optional channels such as satellite are used, reporting frequency and payload size typically need to be reduced further to remain within practical battery and cost limits.
+#### 3.5.1 MQTT topic structure and QoS strategy
 
-### 5.3 Handling intermittent connectivity using store-and-forward
+Example topics:
 
-Connectivity reliability also affects power strategy and data transmission design. Intermittent connectivity is common on long routes and inside vehicles/containers. Silicon Labs (2023) notes that devices can buffer data locally during coverage loss and upload it once connectivity returns, which prevents routine telemetry and critical events from being lost.
+- `parcel/{device_id}/telemetry`
+- `parcel/{device_id}/event`
+- `parcel/{device_id}/status`
 
-In practice, asset tracking devices may use different power strategies, including rechargeable batteries, replaceable batteries, or even solar-assisted charging.
+QoS strategy:
 
-Industry solutions show that battery life can range from months to years depending on transmission frequency and connectivity type. This further emphasizes the importance of balancing energy consumption with tracking requirements in system design.
+- **QoS 0:** routine telemetry to reduce overhead
+- **QoS 1:** critical events such as tamper, impact, and temperature alarms
+- **QoS 2:** avoided because of higher overhead
 
-### 5.4 Battery lifetime estimation at a high level
+Persistent sessions and local buffering help with reconnect bursts after outages.
 
-To justify the reporting interval in a design-oriented way, an approximate energy budget is considered (exact values depend on hardware, environment, and network conditions).
+#### 3.5.2 LwM2M for device management
 
-Key takeaway for design comparison:
+LwM2M can be used alongside MQTT:
 
-- **More frequent updates** increase GNSS fixes and radio transmissions, reducing battery life and increasing connectivity cost.
-- **Less frequent updates** preserve battery but reduce visibility and can delay anomaly detection.
+- **MQTT:** telemetry and event path
+- **LwM2M:** provisioning, configuration, diagnostics, and firmware updates
 
-Therefore, **adaptive reporting** (faster on movement/anomalies, slower when stationary) is a practical compromise for commercial high-value tracking.
+This separation keeps telemetry efficient while still supporting long-term fleet management.
 
-## 6. Sensors and Data Reliability
+### 3.6 Data processing and computing paradigm approaches
 
-To keep tracking data reliable and actionable, the system must balance sensor selection with practical limits such as power and cost.
+The selected paradigm is **cloud-based processing by default**.
 
-### 6.1 Sensor selection and measurement goals
+Cloud responsibilities include:
 
-GPS is used as the primary source of location data. Additional sensors, such as temperature and acceleration sensors, can provide valuable insights into environmental conditions and handling.
+- Validating telemetry
+- De-duplicating repeated messages
+- Ordering delayed messages
+- Mapping `device_id` to `shipment_id`
+- Fusing GNSS, fallback location, and facility events
+- Triggering alerts and notifications
 
-Beyond location, many commercial tracking programs monitor conditions such as temperature and physical impact. For sensitive goods (for example pharmaceuticals), this kind of telemetry is often the difference between “arrived” and “arrived in acceptable condition.” Silicon Labs (2023) discusses how smart tracking supports this end-to-end visibility.
+Edge or gateway processing may be useful in facilities, but it increases infrastructure complexity. For wide-area parcel tracking, cloud-centric processing is the most practical default.
 
-For robustness, positioning can also use fallbacks such as cellular-based estimates (Cell-ID) or Wi-Fi positioning when GNSS is degraded (e.g., indoors or in urban canyons). In controlled facilities, BLE/UWB infrastructure can provide additional location context or zone-level events.
+### 3.7 Security considerations
 
-### 6.2 Data uncertainty and interpretation
+Security goals:
 
-IoT data should be treated as indicative rather than absolute. Sensor readings are affected by environment, device placement, and calibration, which introduces uncertainty.
+- **Confidentiality:** protect location and condition data
+- **Integrity:** prevent forged or altered telemetry
+- **Availability:** support incident response even during unreliable connectivity
 
-Reliability improves when signals are combined. For example, fusing location with motion can help identify anomalies such as unexpected stops, detours, or impacts.
+Key measures:
 
-Additional sensors also increase cost and power consumption, so they are enabled only when the shipment value and risk justify the overhead.
+- Per-device identity and authentication
+- TLS for transport security
+- Sequence numbers for ordering and replay detection
+- Optional MAC/signature for high-value evidence
+- Backend RBAC and audit logs
+- Tamper detection and offline/silence escalation
 
-## 7. System Architecture and Computing Paradigm
+#### 3.7.1 Threat model
 
-To support scalable deployment and centralized operations, the system uses a cloud-based architecture.
+| Threat | Mitigation |
+| --- | --- |
+| Device removal or replacement | Tamper switch, device-shipment binding, identity checks |
+| Jamming or prolonged offline | Silence detection, escalation, store-and-forward |
+| GNSS spoofing | Route/speed plausibility checks, fallback positioning |
+| Unauthorized onboarding | Secure provisioning and credential rotation |
+| Backend account compromise | Least-privilege access and audit logs |
 
-In this model, tracking devices send data directly to cloud services, where it is stored, processed, and made accessible to users.
+#### 3.7.2 Lifecycle security
 
-Cloud-based architecture simplifies system design and supports large-scale deployment. It enables centralized monitoring, data analytics, and integration with user interfaces.
+Security must cover the whole device lifecycle:
 
-However, this approach introduces dependency on network connectivity and may increase latency. Alternative approaches, such as edge or gateway-based processing, could reduce communication overhead and improve responsiveness.
+- Secure manufacturing and provisioning
+- Unique device credentials
+- Signed firmware updates
+- Credential rotation
+- Decommissioning or reset before reuse
 
-Edge computing could reduce latency and communication overhead in some scenarios. However, it also increases device complexity and cost, which conflicts with a low-power, low-maintenance tracking device. For this reason, cloud-based processing is the more practical default.
+## 4. End result - Architecture and structure of your system
 
-### Parcel Tracking System Architecture
+### 4.1 Physical architecture – Devices and communication technologies
 
-![Screenshot 2026-04-21 at 14.56.50.png](attachment:c0dd87e7-ff0f-44ce-8840-1a524c56d104:Screenshot_2026-04-21_at_14.56.50.png)
+The physical architecture consists of battery-powered parcel tracking devices, wide-area communication networks, optional facility gateways, and the cloud IoT platform. Each valuable parcel is attached to one tracking device. The device collects location, condition, and security data, then sends telemetry and event messages to the cloud through cellular IoT networks.
 
-### System Architecture Overview
+```mermaid
+flowchart LR
+    P[Valuable Parcel] --- D[Tracking Device<br>GNSS/GPS<br>Temperature Sensor<br>Accelerometer<br>Tamper/Open Sensor<br>Battery + MCU]
 
-The system follows a cloud-based IoT architecture consisting of four main components: tracking devices, communication network, cloud platform, and user interface.
+    D -->|GNSS/GPS positioning| S[GNSS Satellites]
 
-### Constraints (Key Design Limits)
+    D -->|NB-IoT / LTE-M<br>MQTT over TLS| C[Cellular IoT Network]
+    C --> I[Cloud IoT Platform<br>MQTT Broker / Ingestion]
 
-- **Device (Tracking device):** *Low Power* (battery-operated, constrained hardware)
-- **Network (NB-IoT / cellular):** *Coverage* (depends on telecom availability along routes)
-- **Cloud platform:** *Scalability* (must handle many devices and data streams reliably)
+    D -.->|BLE / UWB<br>facility positioning| G[Warehouse / Hub Gateway]
+    G -.->|IP network<br>MQTT/HTTPS over TLS| I
 
-### 7.1 Key components
+    D -.->|Satellite IoT<br>critical fallback only| SAT[Satellite Network]
+    SAT -.-> I
 
-- **Tracking device:** GNSS + sensors + cellular IoT, with optional satellite fallback depending on route.
-- **Communication:** cellular network for routine telemetry; satellite as a fallback where needed.
-- **Cloud platform:** ingestion, data storage, timeline fusion, and alert routing.
-- **User interface:** dashboard, alerts, and audit trail.
+    I --> U[Operations Dashboard<br>Customer Portal<br>Admin Tools]
+```
 
-### 7.2 Data flow and data model
+The main physical components are:
 
-To make the system implementable, device telemetry can be structured into two primary message types:
+- **Tracking device:** attached to the parcel. It contains GNSS/GPS, temperature sensor, accelerometer, tamper/open sensor, battery, MCU, and NB-IoT/LTE-M modem.
+- **GNSS satellites:** provide outdoor location data to the device.
+- **Cellular IoT network:** NB-IoT or LTE-M is the primary wide-area communication channel.
+- **Facility gateways:** optional BLE/UWB gateways in warehouses or hubs provide indoor/facility-level positioning.
+- **Satellite network:** optional fallback for routes with long cellular coverage gaps.
+- **Cloud IoT platform:** receives MQTT telemetry/events over TLS and forwards data to backend services and user applications.
 
-- **Periodic telemetry (location update):** timestamp, location (GNSS and/or fallback), battery level, signal quality, optional sensor summary
-- **Event telemetry (alerts):** event type (tamper/open, impact, temperature out-of-range), severity, timestamp, last known location, context snapshot
-
-Cloud processing responsibilities:
-
-- **Ordering + de-duplication:** handle retries, out-of-order uploads, and store-and-forward bursts
-- **Timeline fusion:** merge GNSS points, cellular/Wi-Fi fallback estimates, and facility events (BLE/UWB) into a unified shipment timeline with confidence flags
-
-This fusion process assigns confidence levels to different location sources and resolves conflicts between them.
-
-- **Alert routing:** map events to operational recipients and escalation rules
-
-### **7.3 Example telemetry message and data flow**
-
-A typical telemetry message sent by the tracking device can be structured as:
+The primary communication path is:
 
 ```
+Tracking device → NB-IoT/LTE-M → MQTT over TLS → Cloud IoT platform
+```
+
+Optional paths are:
+
+```
+Tracking device → BLE/UWB → Facility gateway → MQTT/HTTPS over TLS → Cloud
+
+Tracking device → Satellite IoT → Cloud
+```
+
+### 4.2 Logical architecture - Services and data flows
+
+```mermaid
+flowchart LR
+	A[Tracking Device<br>GNSS + Sensors] -->|MQTT telemetry QoS0<br>periodic| B[IoT Ingestion / Broker]
+	A -->|MQTT event QoS1<br>tamper/impact| B
+
+	B --> C[Queue / Buffer<br>handles bursts + retries]
+	C --> D[Stream Processing<br>validate, de-dup, order]
+	D --> E[Enrichment Service<br>map device_id to shipment_id<br>add route context]
+	E --> F[(Telemetry Store<br>time-series + raw events)]
+	E --> G[(Shipment Timeline DB<br>fused points + confidence)]
+	G --> H[Application Services<br>dashboard, APIs, reporting]
+	E --> I[Alerting Service<br>rules + escalation]
+	I --> J[Notifications<br>email/SMS/app/webhook]
+
+	H --> K[Customer Portal / Internal UI]
+```
+
+### 4.3 Data models
+
+The data model includes identity, time, sequence, location confidence, and optional integrity metadata.
+
+#### 4.3.1 Metadata for auditability and ordering
+
+Important metadata fields:
+
+- `device_id`: identifies the tracking device
+- `shipment_id`: links device data to the parcel
+- `timestamp`: device-side event time
+- `backend_received_time`: backend arrival time
+- `seq`: ordering and de-duplication
+- `source`, `accuracy_m`, `confidence`: explain uncertainty
+- `sig` or `mac`: optional integrity protection
+
+#### 4.3.2 Periodic telemetry model
+
+```json
 {
-  "device_id":"123456",
-  "timestamp":"2026-04-29T10:15:00Z",
+  "type": "telemetry",
+  "device_id": "D-123456",
+  "shipment_id": "S-2026-000045",
+  "timestamp": "2026-04-29T10:15:00Z",
+  "backend_received_time": "2026-04-29T10:15:08Z",
+  "seq": 1842,
   "location": {
-    "lat":61.4978,
-    "lon":23.7610
+    "source": "gnss",
+    "lat": 61.4978,
+    "lon": 23.7610,
+    "accuracy_m": 8,
+    "confidence": 0.92
   },
-  "battery":78,
-  "signal_quality":-95,
-  "temperature":6.5,
-  "event":null
-}
-```
-
-For event-driven alerts, the message may include:
-
-```
-{
-  "device_id":"123456",
-  "timestamp":"2026-04-29T10:18:12Z",
-  "event":"tamper_detected",
-  "severity":"high",
-  "location": {
-    "lat":61.4980,
-    "lon":23.7625
+  "battery_pct": 78,
+  "signal_dbm": -95,
+  "temperature_c": 6.5,
+  "motion": {
+    "moving": true,
+    "impact_g": 0.3
   }
 }
 ```
 
-The data flow in the cloud platform typically follows these steps:
-
-1. **Ingestion layer:** receives MQTT messages via a broker
-2. **Message queue / buffer:** handles bursts and store-and-forward uploads
-3. **Processing layer:** performs validation, de-duplication, and enrichment
-4. **Storage layer:** saves structured telemetry and event data
-5. **Application layer:** updates dashboards and triggers alerts
-
-This structured pipeline ensures that delayed or out-of-order messages can still be integrated into a consistent shipment timeline.
-
-### 7.4 Notes on scalability and reliability
-
-The ingestion and processing layers are designed to handle bursts after reconnection (store-and-forward) and large numbers of devices. De-duplication and ordering in the cloud help keep the shipment timeline consistent.
-
-## 8. Communication Protocol Trade-offs
-
-The protocol choice affects bandwidth use, reliability under weak coverage, and how easily the backend can scale.
-
-### 8.1 Protocol options in this context
-
-For this parcel-tracking design, the main question is how to ship small telemetry messages and occasional high-priority alerts reliably, without keeping devices awake longer than necessary.
-
-### 8.2 Selected protocol direction
-
-MQTT is a good fit for this system because it supports lightweight telemetry, asynchronous delivery, and scalable fan-out through a broker. It also matches the store-and-forward behavior needed when devices reconnect and upload buffered data.
-
-Payloads are kept small to reduce transmission time, energy consumption, and cellular data cost.
-
-HTTP remains useful for configuration and occasional device management calls, but it is not ideal as the primary telemetry channel because request overhead and connection setup can waste energy.
-
-CoAP is a reasonable alternative for constrained environments, especially when a REST-like model is preferred. In this design, MQTT is chosen mainly for operational simplicity at scale and the maturity of cloud IoT tooling.
-
-A high-level comparison is shown below:
-
-| Protocol | Communication Model | Overhead | Advantages | Limitations |
-| --- | --- | --- | --- | --- |
-| HTTP | Request–Response | High | Widely supported, simple | Inefficient for constrained devices |
-| MQTT | Publish–Subscribe | Low | Efficient, scalable, asynchronous | Requires broker (potential single point of failure) |
-| CoAP | Request–Response (UDP) | Low | Lightweight, suitable for IoT | Less mature ecosystem |
-
-### 8.3 MQTT Topic Structure and QoS Strategy for Parcel Tracking
-
-In this system, MQTT topics are structured to support scalable and organized ingestion. A typical topic hierarchy is:
-
-- `parcel/{device_id}/telemetry` — periodic location and sensor updates
-- `parcel/{device_id}/event` — high-priority alerts (e.g., tamper, impact)
-- `parcel/{device_id}/status` — device health and battery reports
-
-MQTT Quality of Service (QoS) levels are selected to balance reliability and energy consumption:
-
-- **QoS 0** for frequent telemetry (lowest overhead)
-- **QoS 1** for critical events (at-least-once delivery)
-- **QoS 2** is avoided due to higher overhead
-
-Devices keep persistent sessions when possible, so messages can be delivered after reconnection (supports store-and-forward during outages). A keep-alive mechanism helps the backend detect inactive or disconnected devices.
-
-**Summary:** QoS 0 saves power for frequent telemetry; QoS 1 improves delivery of critical events; persistent sessions support store-and-forward after outages.
-
-### 8.4 LwM2M for device management
-
-In addition to MQTT for telemetry, the system can use **LwM2M (Lightweight M2M)** for standardized device management. This is useful when managing many tracking devices over long lifetimes.
-
-Typical roles:
-
-- **LwM2M Client:** runs on the tracking device and exposes device resources (e.g., device info, connectivity status, firmware update state).
-- **LwM2M Server:** manages the device fleet (read/write configuration, execute commands, observe values, trigger firmware updates).
-- **Bootstrap Server:** provisions initial security credentials and server configuration.
-
-How it fits this design:
-
-- **Telemetry path:** keep MQTT for high-rate telemetry and event messages (simple ingestion at scale).
-- **Management path:** use LwM2M for provisioning, configuration changes, remote diagnostics, and firmware updates.
-- **Data model:** LwM2M Objects/Resources provide a standard way to represent things like battery, network status, and firmware state.
-
-## 9. Security and Lifecycle Considerations
-
-Security must be considered across the full lifecycle, not only during data transmission, because field devices and backend systems are long-lived and exposed to practical threats.
-
-### 9.1 Communication security for in-transit protection
-
-The system implements:
-
-- Encrypted transport for telemetry and alerts
-- Per-device identity (provisioned credentials) so shipments are tied to a known device
-- Integrity checks and auditability so that location and security events are hard to forge or silently alter
-
-### 9.2 Lifecycle security for manufacturing, provisioning, and updates
-
-However, security is not limited to communication. It must also address risks during manufacturing, deployment, and maintenance.
-
-Devices operating in the field for extended periods must support secure updates and proper identity management. Failure to address lifecycle security can lead to long-term vulnerabilities.
-
-From a commercial perspective, security breaches can result in financial loss, reputational damage, and reduced customer trust, making security a critical design requirement.
-
-For high-value goods, security monitoring can be strengthened by adding tamper-evidence features (e.g., light/open detection, seal status, impact events) and integrating alarms into operational response workflows.
-
-### 9.3 Threat model for high-value shipments
-
-Typical threats and mitigations include:
-
-- **Device removal / replacement:** tamper switches, seal status, binding device ID to shipment in the backend
-- **Signal jamming / prolonged offline:** offline detection rules, store-and-forward, escalation if silence exceeds a threshold
-- **GNSS spoofing / location anomalies:** plausibility checks (speed/route constraints), multi-source positioning (GNSS + cellular fallback), anomaly flags
-- **Unauthorized device onboarding:** secure provisioning, per-device credentials, certificate/key rotation
-- **Backend account compromise:** least-privilege access, audit logs, alerting on abnormal access
-
-## 10. Commercial Considerations and Trade-offs
-
-Commercial viability depends on balancing cost, operational effort, and the level of visibility and security gained.
-
-### 10.1 Cost drivers
-
-The main cost drivers of IoT tracking include device hardware, cellular subscription fees, and operational overhead (deployment, monitoring, and battery/device replacement). These costs must be justified by reduced loss risk and improved visibility for high-value shipments.
-
-### 10.2 Market context and solution landscape
-
-In commercial deployments, selecting an asset tracking solution depends on multiple factors, including business size, industry requirements, and operational scale.
-
-Commercial solutions range from low-cost trackers for small deployments to enterprise platforms that manage thousands of assets with analytics and integrations. In evaluations, the practical criteria are usually connectivity type, battery life, pricing model, and operational scalability. Many products mix RFID, BLE, Wi-Fi, and cellular to balance accuracy, cost, and coverage. The takeaway is simple: there is no single best technology; the right mix depends on the business case and the routes.
-
-### 10.3 Value justification for IoT tracking
-
-Whether the system is worth deploying depends on the value of the goods and the cost of loss, delay, or disputes. For low-value items, the added device and operations cost is hard to justify. For high-value shipments, better visibility and faster incident response can offset that cost.
-
-### 10.4 Simple cost model per shipment
-
-To compare option compositions, a simplified model can be used:
-
-- **Per-shipment cost** ≈ (device amortization) + (connectivity cost) + (ops cost) + (loss/incident cost reduction benefit)
-
-Where:
-
-- Device amortization depends on **reuse cycles** and expected loss rate (recovery process matters).
-- Connectivity cost depends on reporting interval, network, and any satellite fallback usage.
-- Ops cost includes activation, monitoring, returns, battery service, and exception handling.
-
-## 11. Platform Dependency and Long-term Risks
-
-Long-term reliability depends not only on device performance, but also on platform choices and external dependencies that can change over time.
-
-### 11.1 Vendor lock-in risk
-
-Many IoT systems depend on specific cloud platforms and managed services. If a provider changes pricing, terms, or sunsets a product, operators may be forced into a costly migration.
-
-To reduce this risk, the architecture should favor open protocols and modular components so that key pieces can be replaced without redesigning the whole system.
-
-### 11.2 Operational dependency and device lifecycle risk
-
-Beyond cloud vendor lock-in, device programs face long-term risks such as SIM/eSIM availability, roaming policy changes, and hardware end-of-life. Designing for modular connectivity and clear replacement processes reduces these risks.
-
-## 12. Limitations and Future Improvements
-
-The design still has limitations:
-
-### 12.1 Current limitations
-
-- Dependency on network coverage may reduce visibility on remote routes (e.g., long cellular gaps during sea freight)
-- Battery constraints limit update frequency; higher reporting rates shorten lifetime and increase operations cost
-- Higher cost restricts the solution to high-value shipments where loss prevention and traceability justify the expense
-
-### 12.2 Future improvements
-
-Future improvements could include hybrid tracking that mixes event-based evidence (facility/checkpoint events) with periodic IoT telemetry, to reduce cost on low-risk legs while keeping high-risk coverage.
-
-Other improvements include better anomaly detection, clearer device recovery/returns workflows, and expanded multi-network support (roaming policy tuning plus satellite fallback on the routes that need it).
-
-## 13. Conclusion
-
-This report described an IoT-based parcel tracking system for high-value shipments. The proposed solution is layered: checkpoint evidence provides chain-of-custody, while a tracking device adds periodic visibility and security events during transit.
-
-### 13.1 Final design summary
-
-| Design element | Choice | Rationale (high-value shipments) |
-| --- | --- | --- |
-| Tracking approach | GNSS + cellular IoT as primary, plus checkpoint evidence | Provides near real-time visibility while retaining handoff records for accountability |
-| Connectivity | NB-IoT (primary), LTE-M (alternative), satellite (fallback by route) | NB-IoT supports periodic updates with good power efficiency; alternatives cover mobility/coverage gaps |
-| Positioning | GNSS with cellular/Wi-Fi fallback; BLE/UWB events in facilities (optional) | Improves robustness when GNSS is degraded and strengthens facility-level traceability |
-| Sensing | Temperature + motion/impact + tamper/open indicators (as needed) | Aligns with high-value risks (damage, theft, chain-of-custody disputes) |
-| Protocols | MQTT telemetry with small payloads and store-and-forward | Efficient at scale and resilient under intermittent coverage |
-| Backend | Cloud-based storage + timeline fusion + alert routing | Centralized monitoring and consistent shipment timeline across multiple evidence streams |
-
-### 13.2 How the design meets the key requirements
+#### 4.3.3 Event model
+
+```json
+{
+  "type": "event",
+  "device_id": "D-123456",
+  "shipment_id": "S-2026-000045",
+  "timestamp": "2026-04-29T10:18:12Z",
+  "backend_received_time": "2026-04-29T10:18:20Z",
+  "seq": 1850,
+  "event": {
+    "name": "tamper_detected",
+    "severity": "high",
+    "details": {
+      "sensor": "seal_switch",
+      "state": "open"
+    }
+  },
+  "location_hint": {
+    "source": "cell",
+    "lat": 61.4980,
+    "lon": 23.7625,
+    "accuracy_m": 350,
+    "confidence": 0.55
+  }
+}
+```
+
+## 5. Limitations and future improvements
+
+### 5.1 Limitations
+
+The design has some limitations:
+
+- Cellular coverage may be unavailable on remote routes or during sea freight
+- Battery constraints limit reporting frequency
+- GNSS accuracy may degrade indoors or in dense urban areas
+- The system is more expensive than standard parcel tracking, so it is mainly suitable for high-value shipments
+- False alarms may occur if thresholds are not calibrated well
+
+### 5.2 Future improvements
+
+Possible improvements include:
+
+- Better anomaly detection using route history and movement patterns
+- More advanced confidence scoring for location fusion
+- Improved device return and reuse workflow
+- More flexible multi-network support
+- Satellite fallback for selected high-risk or low-coverage routes
+- Stronger evidence handling for insurance and compliance cases
+
+## 6. Conclusion
+
+This report presented an IoT-based parcel tracking system for high-value shipments. The proposed design combines checkpoint evidence with active IoT telemetry. GNSS and cellular IoT provide periodic wide-area visibility, while temperature, impact, and tamper sensors provide condition and security evidence.
+
+The selected architecture uses Device-to-Cloud communication, MQTT telemetry, store-and-forward buffering, and cloud-based timeline fusion. NB-IoT is the default connectivity option, while LTE-M, BLE/UWB, and satellite are used selectively depending on route and risk.
 
 | Requirement | Design choice | How it is satisfied |
 | --- | --- | --- |
-| Near real-time visibility | Periodic GNSS + cellular telemetry (configurable interval) | Default 15 min updates with adaptive reporting; cloud availability typically within minutes when coverage exists |
-| Reliability under outages | Store-and-forward + cloud ordering/de-duplication | Data is buffered locally during outages and uploaded later; backend merges delayed bursts into a coherent timeline |
-| Security and integrity | Encrypted/authenticated communication + tamper-aware alerts | Trusted device identity, secure transport, and operational workflows for high-severity security events |
-| Commercial viability | Composable add-ons + cost model tied to reuse cycles | Only deploy satellite/UWB/tamper features when route/risk justifies cost; reuse and recovery reduce per-shipment cost |
+| Near real-time visibility | Periodic GNSS + cellular telemetry | Default 15-minute updates with adaptive reporting |
+| Reliability under outages | Store-and-forward + cloud ordering | Data is buffered and uploaded after reconnection |
+| Security and integrity | Device identity, TLS, sequence numbers, audit logs | Reduces spoofing, tampering, and evidence disputes |
+| Scalability | MQTT broker, queue, cloud processing | Supports many devices and burst uploads |
+| Commercial viability | Modular add-ons | Expensive features are enabled only when justified |
 
-### 13.3 Default configuration
+The final design is a layered and modular system. It avoids relying on one single technology and instead combines wide-area tracking, facility-level add-ons, security events, and backend processing to provide a practical solution for valuable parcel tracking.
 
-- **Reporting interval (default):** Default ~15 min updates (within the typical 5–30 min range)
-- **Connectivity:** NB-IoT primary; LTE-M where mobility/latency requires; satellite only on low-coverage routes
-- **Sensors enabled (default):** temperature + motion/impact + tamper/open indicator
-- **Offline buffer:** store telemetry locally and upload on reconnection (capacity sized to expected outage durations)
-- **Alerting policy (example):** warn if no update is received for ~2 hours; escalate at ~6 hours for high-risk routes (values tuned per route and operating model)
+## Appendix. Additional supporting material
 
-### 13.4 Design conclusion
+### A. Simple cost model
 
-For high-value logistics, the most practical solution is usually a combination rather than a single technology. Using checkpoint evidence as a baseline, then adding wide-area telemetry and selective add-ons (facility events, satellite fallback, tamper sensing) provides a more robust tracking story without paying the maximum cost on every route and facility.
+A simplified per-shipment cost model is:
 
-## AI Usage Statement
+```
+Per-shipment cost ≈ device amortization + connectivity cost + operational cost - avoided loss/dispute cost
+```
 
-This report was prepared with AI assistance for language and structure. All technical content and design choices were reviewed and validated by the authors to ensure correctness and alignment with the course concepts.
+Where:
+
+- **Device amortization** depends on device price, reuse cycles, and device loss rate
+- **Connectivity cost** depends on reporting interval, network type, roaming, and satellite usage
+- **Operational cost** includes activation, monitoring, returns, battery service, and exception handling
+- **Avoided loss/dispute cost** represents the value gained from faster intervention and stronger evidence
+
+### B. Default configuration example
+
+| Item | Default choice |
+| --- | --- |
+| Reporting interval | Around 15 minutes |
+| Connectivity | NB-IoT primary; LTE-M where mobility/latency requires |
+| Sensors | GNSS, temperature, accelerometer, tamper/open indicator |
+| Offline handling | Local buffer + upload after reconnection |
+| Routine telemetry QoS | MQTT QoS 0 |
+| Critical event QoS | MQTT QoS 1 |
+| Alert policy | Warn after about 2 hours without update; escalate after about 6 hours on high-risk routes |
+
+### C. AI Usage Statement
+
+This report was prepared with AI assistance for language and structure. All technical content and design choices were reviewed and validated by the author to ensure correctness and alignment with the course concepts.
 
 ## References
 
 - Hologram. (2026, February 2). *10 best IoT asset tracking systems*. Available at: https://www.hologram.io/blog/10-best-iot-asset-tracking-systems
 - Silicon Labs. (2023, October 31). *IoT Smart Tracking Streamlines Logistics Management End-to-End*. Available at: https://www.silabs.com/blog/iot-smart-tracking-streamlines-logistics-management
+
+```
+
+```
