@@ -4,19 +4,26 @@
 
 - **3GPP** — 3rd Generation Partnership Project
 - **4G/LTE** — Fourth Generation / Long-Term Evolution
+- **API** — Application Programming Interface
 - **BLE** — Bluetooth Low Energy
 - **CoAP** — Constrained Application Protocol
+- **ETA** — Estimated Time of Arrival
 - **GNSS** — Global Navigation Satellite System
 - **GPS** — Global Positioning System
 - **HTTP** — Hypertext Transfer Protocol
 - **IoT** — Internet of Things
+- **IP** — Internet Protocol
 - **LoRa** — Long Range
 - **LTE-M** — LTE for Machines
 - **LwM2M** — Lightweight Machine-to-Machine
+- **MAC** — Message Authentication Code
+- **MCU** — Microcontroller Unit
 - **MQTT** — Message Queuing Telemetry Transport
 - **NB-IoT** — Narrowband Internet of Things
+- **QoS** — Quality of Service
 - **RFID** — Radio-Frequency Identification
 - **SIM/eSIM** — Subscriber Identity Module / embedded SIM
+- **TLS** — Transport Layer Security
 - **UWB** — Ultra-Wideband
 - **Wi-Fi** — IEEE 802.11 wireless networking
 
