@@ -502,6 +502,7 @@ This design works well for many shipments, but it still has a few real-world lim
 - **Battery trade-offs:** the more often we report location, the faster the battery runs out.
 - **GPS isn’t perfect:** indoors and in dense city areas, GPS accuracy can get worse.
 - **Cost:** compared with normal “scan-based” parcel tracking, this solution costs more, so it makes the most sense for valuable shipments.
+- **Cost drivers:** device reuse/loss rate, connectivity plan, and how often we report all have a direct impact on cost (see Appendix A).
 - **False alarms:** impacts/temperature/tamper signals can sometimes trigger during normal handling if thresholds are not tuned well.
 
 ### 5.2 Future improvements
@@ -538,11 +539,13 @@ Connectivity choices are flexible: **NB‑IoT** is the default for battery life 
 
 Overall, the design is intentionally modular: wide-area tracking is the baseline, facility-level add-ons are optional, and security/event handling is built in so the system can support real operational and insurance needs for valuable shipments.
 
+See Appendix B for a simple default configuration that matches the design choices described in this report.
+
 ## Appendix. Additional supporting material
 
 ### A. Simple cost model
 
-A simplified per-shipment cost model is:
+A simplified per-shipment cost model (to show the main cost drivers) is:
 
 ```
 Per-shipment cost ≈ device amortization + connectivity cost + operational cost - avoided loss/dispute cost
@@ -555,6 +558,8 @@ Where:
 - **Operational cost** includes activation, monitoring, returns, battery service, and exception handling
 - **Avoided loss/dispute cost** represents the value gained from faster intervention and stronger evidence
 
+This is not meant to be an exact budget, but a simple way to show why the reporting interval, connectivity choice, and device reuse process matter in practice.
+
 ### B. Default configuration example
 
 | Item | Default choice |
@@ -566,6 +571,8 @@ Where:
 | Routine telemetry QoS | MQTT QoS 0 |
 | Critical event QoS | MQTT QoS 1 |
 | Alert policy | Warn after about 2 hours without update; escalate after about 6 hours on high-risk routes |
+
+This default setup is a baseline for normal routes. For higher-risk shipments, the reporting interval can be shortened and escalation thresholds tightened.
 
 ### C. AI Usage Statement
 
